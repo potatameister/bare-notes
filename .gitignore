@@ -1,12 +1,26 @@
+# IDE / local
 *.iml
 .gradle/
-build/
-local.properties
 .idea/
+.vscode/
+.kotlin/
+local.properties
 .DS_Store
 captures/
 .externalNativeBuild/
 .cxx/
+
+# Build output
+build/
 *.apk
+*.aab
+*.apk.idsig
+mapping.txt
+
+# Signing / secrets — never commit
+*.jks
 *.keystore
+*.p12
 keystore.properties
+.env
+.env.*
