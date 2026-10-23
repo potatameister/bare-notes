@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.potatameister.barenotes.databinding.ActivityMainBinding
 
@@ -15,6 +16,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: NoteAdapter
     private val notes = mutableListOf<Note>()
+    private var pendingThemeApply = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -30,8 +32,22 @@ class MainActivity : AppCompatActivity() {
         binding.notesList.setHasFixedSize(true)
 
         binding.darkSwitch.isChecked = ThemePrefs.isDark(this)
+        binding.drawerLayout.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+            override fun onDrawerClosed(drawerView: View) {
+                if (pendingThemeApply) {
+                    pendingThemeApply = false
+                    ThemePrefs.applyStored(this@MainActivity)
+                }
+            }
+        })
         binding.darkSwitch.setOnCheckedChangeListener { _, checked ->
-            ThemePrefs.setDark(this, checked)
+            ThemePrefs.save(this, checked)
+            if (binding.drawerLayout.isDrawerOpen(binding.sidebar)) {
+                pendingThemeApply = true
+                binding.drawerLayout.closeDrawer(binding.sidebar)
+            } else {
+                ThemePrefs.applyStored(this)
+            }
         }
         binding.themeRow.setOnClickListener { binding.darkSwitch.toggle() }
 
@@ -41,6 +57,10 @@ class MainActivity : AppCompatActivity() {
         binding.addButton.setOnClickListener { openEditor(null) }
         binding.navAll.setOnClickListener {
             binding.drawerLayout.closeDrawer(binding.sidebar)
+        }
+        binding.navSettings.setOnClickListener {
+            binding.drawerLayout.closeDrawer(binding.sidebar)
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
         binding.navAbout.setOnClickListener {
             binding.drawerLayout.closeDrawer(binding.sidebar)
@@ -54,8 +74,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadNotes() {
+        val loaded = NoteStore.load(this)
+        val sorted = if (SettingsPrefs.sortOrder(this) == SettingsPrefs.SORT_CREATED) {
+            loaded.sortedByDescending { it.createdAt }
+        } else {
+            loaded.sortedByDescending { it.updatedAt }
+        }
         notes.clear()
-        notes.addAll(NoteStore.load(this).sortedByDescending { it.updatedAt })
+        notes.addAll(sorted)
         adapter.submit(notes)
         binding.emptyState.visibility = if (notes.isEmpty()) View.VISIBLE else View.GONE
     }

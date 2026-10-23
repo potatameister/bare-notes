@@ -17,6 +17,17 @@
     <string name="no_body">No additional text</string>
     <string name="sidebar_footer">v0.1 · offline</string>
     <string name="dark_mode">Dark mode</string>
+    <string name="settings">Settings</string>
+    <string name="settings_section">NOTES</string>
+    <string name="settings_footer">Settings are stored on this device.</string>
+    <string name="editor_text_size">Editor text size</string>
+    <string name="sort_notes">Sort notes</string>
+    <string name="size_small">Small</string>
+    <string name="size_default">Default</string>
+    <string name="size_large">Large</string>
+    <string name="size_xlarge">Extra large</string>
+    <string name="sort_modified">Last modified</string>
+    <string name="sort_created">Date created</string>
 
     <string name="about_intro">A tiny, offline notes app.</string>
     <string name="about_body">Notes are stored on this device as JSON. No accounts, no ads, no tracking, and no internet permission.</string>
@@ -24,7 +35,7 @@
     <string name="source_code">Source code</string>
     <string name="source_url">github.com/potatameister/bare-notes &#8599;</string>
     <string name="support">Support</string>
-    <string name="support_url">potatameister.github.io &#8599;</string>
+    <string name="support_url">potatameister.github.io/support &#8599;</string>
     <string name="license">License</string>
     <string name="license_value">GPL-3.0</string>
     <string name="source_code_desc">Source code, opens in browser</string>
@@ -41,9 +52,15 @@
     <string name="edited_absolute">Edited %1$s</string>
     <string name="just_now">just now</string>
     <string name="new_note">New note</string>
+    <string name="meta_counts">%1$s · %2$s</string>
 
     <plurals name="character_count">
         <item quantity="one">%1$d character</item>
         <item quantity="other">%1$d characters</item>
+    </plurals>
+
+    <plurals name="word_count">
+        <item quantity="one">%1$d word</item>
+        <item quantity="other">%1$d words</item>
     </plurals>
 </resources>

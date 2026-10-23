@@ -15,7 +15,7 @@ class AboutActivity : AppCompatActivity() {
 
     private companion object {
         const val SOURCE_URL = "https://github.com/potatameister/bare-notes"
-        const val SUPPORT_URL = "https://potatameister.github.io"
+        const val SUPPORT_URL = "https://potatameister.github.io/support"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

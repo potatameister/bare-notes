@@ -22,11 +22,10 @@ object ThemePrefs {
         }
     }
 
-    fun setDark(context: Context, dark: Boolean) {
+    fun save(context: Context, dark: Boolean) {
         prefs(context).edit()
             .putString(KEY, if (dark) DARK else LIGHT)
             .apply()
-        apply(if (dark) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO)
     }
 
     private fun apply(mode: Int) {

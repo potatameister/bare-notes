@@ -23,6 +23,7 @@ object NoteStore {
                             id = item.optString("id"),
                             title = item.optString("title"),
                             body = item.optString("body"),
+                            createdAt = item.optLong("createdAt", item.optLong("updatedAt")),
                             updatedAt = item.optLong("updatedAt")
                         )
                     )
@@ -41,6 +42,7 @@ object NoteStore {
                     .put("id", note.id)
                     .put("title", note.title)
                     .put("body", note.body)
+                    .put("createdAt", note.createdAt)
                     .put("updatedAt", note.updatedAt)
             )
         }

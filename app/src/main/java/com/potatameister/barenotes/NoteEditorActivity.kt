@@ -1,6 +1,7 @@
 package com.potatameister.barenotes
 
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
@@ -21,6 +22,7 @@ class NoteEditorActivity : AppCompatActivity() {
     private var note: Note? = null
     private var isSaved = false
     private var deleted = false
+    private val wordSplit = Regex("\\s+")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -29,6 +31,11 @@ class NoteEditorActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         applyInsets()
+
+        binding.bodyInput.setTextSize(
+            TypedValue.COMPLEX_UNIT_SP,
+            SettingsPrefs.textSizeSp(this).toFloat()
+        )
 
         val noteId = intent.getStringExtra(EXTRA_NOTE_ID)
             ?: savedInstanceState?.getString(EXTRA_NOTE_ID)
@@ -69,19 +76,26 @@ class NoteEditorActivity : AppCompatActivity() {
         save()
     }
 
-    private fun newNote(): Note = Note(
-        id = UUID.randomUUID().toString(),
-        title = "",
-        body = "",
-        updatedAt = System.currentTimeMillis()
-    )
+    private fun newNote(): Note {
+        val now = System.currentTimeMillis()
+        return Note(
+            id = UUID.randomUUID().toString(),
+            title = "",
+            body = "",
+            createdAt = now,
+            updatedAt = now
+        )
+    }
 
     private fun updateMeta() {
-        val count = binding.bodyInput.text?.toString()?.length ?: 0
-        binding.characterCount.text = resources.getQuantityString(
-            R.plurals.character_count,
-            count,
-            count
+        val body = binding.bodyInput.text?.toString().orEmpty()
+        val characters = body.length
+        val words = if (body.isBlank()) 0 else body.trim().split(wordSplit).size
+
+        binding.metaCounts.text = getString(
+            R.string.meta_counts,
+            resources.getQuantityString(R.plurals.character_count, characters, characters),
+            resources.getQuantityString(R.plurals.word_count, words, words)
         )
         binding.editedAt.text = if (isSaved) {
             note?.let {
