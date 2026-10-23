@@ -1,4 +1,4 @@
-# Bare Notes
+# BARE Notes
 
 A tiny, fast, offline notes app for Android.
 
