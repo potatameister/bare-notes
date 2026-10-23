@@ -25,6 +25,12 @@ Download the APK from the latest GitHub Actions run:
 
 The APK is built in GitHub Actions with Gradle. No local Android SDK is required.
 
+- Android Gradle Plugin 9.4.1
+- Gradle 9.6.0
+- Built-in Kotlin
+- compileSdk / targetSdk 37
+- minSdk 26
+
 ## License
 
 GPL-3.0

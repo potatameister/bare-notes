@@ -1,18 +1,15 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "com.potatameister.barenotes"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.potatameister.barenotes"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "0.1"
     }
@@ -39,12 +36,6 @@ android {
 
     lint {
         abortOnError = false
-    }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
