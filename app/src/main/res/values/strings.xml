@@ -15,7 +15,35 @@
     <string name="no_notes_hint">Tap + to write one.</string>
     <string name="untitled">Untitled</string>
     <string name="no_body">No additional text</string>
-    <string name="ok">OK</string>
-    <string name="about_message">A tiny, offline notes app.\n\nNo accounts. No ads. No tracking.\n\nVersion 0.1</string>
     <string name="sidebar_footer">v0.1 · offline</string>
+    <string name="dark_mode">Dark mode</string>
+
+    <string name="about_intro">A tiny, offline notes app.</string>
+    <string name="about_body">Notes are stored on this device as JSON. No accounts, no ads, no tracking, and no internet permission.</string>
+    <string name="version">Version</string>
+    <string name="source_code">Source code</string>
+    <string name="source_url">github.com/potatameister/bare-notes &#8599;</string>
+    <string name="support">Support</string>
+    <string name="support_url">potatameister.github.io &#8599;</string>
+    <string name="license">License</string>
+    <string name="license_value">GPL-3.0</string>
+    <string name="source_code_desc">Source code, opens in browser</string>
+    <string name="support_desc">Support, opens in browser</string>
+    <string name="no_browser">No browser available.</string>
+
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete_note">Delete note?</string>
+    <string name="delete_note_message">This cannot be undone.</string>
+    <string name="delete_note_desc">Delete note</string>
+
+    <string name="edited_relative">Edited %1$s</string>
+    <string name="edited_absolute">Edited %1$s</string>
+    <string name="just_now">just now</string>
+    <string name="new_note">New note</string>
+
+    <plurals name="character_count">
+        <item quantity="one">%1$d character</item>
+        <item quantity="other">%1$d characters</item>
+    </plurals>
 </resources>

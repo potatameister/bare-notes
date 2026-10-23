@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -30,6 +29,12 @@ class MainActivity : AppCompatActivity() {
         binding.notesList.adapter = adapter
         binding.notesList.setHasFixedSize(true)
 
+        binding.darkSwitch.isChecked = ThemePrefs.isDark(this)
+        binding.darkSwitch.setOnCheckedChangeListener { _, checked ->
+            ThemePrefs.setDark(this, checked)
+        }
+        binding.themeRow.setOnClickListener { binding.darkSwitch.toggle() }
+
         binding.menuButton.setOnClickListener {
             binding.drawerLayout.openDrawer(binding.sidebar)
         }
@@ -39,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         }
         binding.navAbout.setOnClickListener {
             binding.drawerLayout.closeDrawer(binding.sidebar)
-            showAbout()
+            startActivity(Intent(this, AboutActivity::class.java))
         }
     }
 
@@ -60,14 +65,6 @@ class MainActivity : AppCompatActivity() {
             Intent(this, NoteEditorActivity::class.java)
                 .putExtra(NoteEditorActivity.EXTRA_NOTE_ID, noteId)
         )
-    }
-
-    private fun showAbout() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.app_name)
-            .setMessage(R.string.about_message)
-            .setPositiveButton(R.string.ok, null)
-            .show()
     }
 
     private fun applyInsets() {

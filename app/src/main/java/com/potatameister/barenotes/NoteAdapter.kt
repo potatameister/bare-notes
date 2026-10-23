@@ -1,6 +1,5 @@
 package com.potatameister.barenotes
 
-import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -57,11 +56,9 @@ class NoteAdapter(
                 .lineSequence()
                 .firstOrNull { it.isNotBlank() }
                 ?: context.getString(R.string.no_body)
-            binding.noteDate.text = DateUtils.getRelativeTimeSpanString(
-                note.updatedAt,
-                System.currentTimeMillis(),
-                DateUtils.MINUTE_IN_MILLIS,
-                DateUtils.FORMAT_ABBREV_RELATIVE
+            binding.noteDate.text = context.getString(
+                R.string.edited_relative,
+                NoteTime.relative(context, note.updatedAt)
             )
             binding.root.setOnClickListener { onClick(note) }
         }
