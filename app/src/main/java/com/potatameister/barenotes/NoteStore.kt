@@ -44,6 +44,12 @@ object NoteStore {
                     .put("updatedAt", note.updatedAt)
             )
         }
-        File(context.filesDir, FILE_NAME).writeText(array.toString())
+        val file = File(context.filesDir, FILE_NAME)
+        val temp = File(context.filesDir, "$FILE_NAME.tmp")
+        temp.writeText(array.toString())
+        if (!temp.renameTo(file)) {
+            file.writeText(array.toString())
+            temp.delete()
+        }
     }
 }

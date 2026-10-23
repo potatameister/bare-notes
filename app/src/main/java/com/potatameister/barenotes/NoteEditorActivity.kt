@@ -26,11 +26,13 @@ class NoteEditorActivity : AppCompatActivity() {
         applyInsets()
 
         val noteId = intent.getStringExtra(EXTRA_NOTE_ID)
+            ?: savedInstanceState?.getString(EXTRA_NOTE_ID)
         note = if (noteId != null) {
             NoteStore.load(this).firstOrNull { it.id == noteId } ?: newNote()
         } else {
             newNote()
         }
+        note?.let { intent.putExtra(EXTRA_NOTE_ID, it.id) }
 
         binding.titleInput.setText(note?.title.orEmpty())
         binding.bodyInput.setText(note?.body.orEmpty())
@@ -44,6 +46,11 @@ class NoteEditorActivity : AppCompatActivity() {
         if (noteId == null) {
             binding.titleInput.requestFocus()
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(EXTRA_NOTE_ID, note?.id)
     }
 
     override fun onPause() {
