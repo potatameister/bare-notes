@@ -7,6 +7,9 @@ A tiny, fast, offline notes app for Android.
 - No tracking
 - No internet permission
 - Notes stored locally as JSON
+- Folders
+- Dark mode, editor text size, sort by modified/created
+- Bold, italic, underline, strike, headings, bullets, numbers, checklists, quotes
 
 ## Status
 
