@@ -7,7 +7,7 @@
     <string name="open_menu">Open menu</string>
     <string name="add_note">New note</string>
     <string name="back">Back</string>
-    <string name="done">Done</string>
+    <string name="save">Save</string>
     <string name="editor_title">Note</string>
     <string name="title_hint">Title</string>
     <string name="body_hint">Start writing…</string>
@@ -53,6 +53,14 @@
     <string name="just_now">just now</string>
     <string name="new_note">New note</string>
     <string name="meta_counts">%1$s · %2$s</string>
+    <string name="bold">Bold</string>
+    <string name="italic">Italic</string>
+    <string name="heading_1">Heading 1</string>
+    <string name="heading_2">Heading 2</string>
+    <string name="format_bold_label">B</string>
+    <string name="format_italic_label">I</string>
+    <string name="format_h1_label">H1</string>
+    <string name="format_h2_label">H2</string>
 
     <plurals name="character_count">
         <item quantity="one">%1$d character</item>

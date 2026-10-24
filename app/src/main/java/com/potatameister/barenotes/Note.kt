@@ -5,5 +5,19 @@ data class Note(
     val title: String,
     val body: String,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val spans: List<NoteSpan> = emptyList()
 )
+
+data class NoteSpan(
+    val type: String,
+    val start: Int,
+    val end: Int
+) {
+    companion object {
+        const val BOLD = "bold"
+        const val ITALIC = "italic"
+        const val H1 = "h1"
+        const val H2 = "h2"
+    }
+}

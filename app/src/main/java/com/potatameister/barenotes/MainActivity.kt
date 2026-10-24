@@ -17,6 +17,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: NoteAdapter
     private val notes = mutableListOf<Note>()
     private var pendingThemeApply = false
+    private val applyTheme = Runnable {
+        if (!isFinishing && !isDestroyed) {
+            if (binding.drawerLayout.isDrawerOpen(binding.sidebar)) {
+                pendingThemeApply = true
+                binding.drawerLayout.closeDrawer(binding.sidebar)
+            } else {
+                ThemePrefs.applyStored(this)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -42,12 +52,8 @@ class MainActivity : AppCompatActivity() {
         })
         binding.darkSwitch.setOnCheckedChangeListener { _, checked ->
             ThemePrefs.save(this, checked)
-            if (binding.drawerLayout.isDrawerOpen(binding.sidebar)) {
-                pendingThemeApply = true
-                binding.drawerLayout.closeDrawer(binding.sidebar)
-            } else {
-                ThemePrefs.applyStored(this)
-            }
+            binding.darkSwitch.removeCallbacks(applyTheme)
+            binding.darkSwitch.postDelayed(applyTheme, 200L)
         }
         binding.themeRow.setOnClickListener { binding.darkSwitch.toggle() }
 
