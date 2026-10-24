@@ -6,7 +6,8 @@ data class Note(
     val body: String,
     val createdAt: Long,
     val updatedAt: Long,
-    val spans: List<NoteSpan> = emptyList()
+    val spans: List<NoteSpan> = emptyList(),
+    val folderId: String = ""
 )
 
 data class NoteSpan(
@@ -17,6 +18,8 @@ data class NoteSpan(
     companion object {
         const val BOLD = "bold"
         const val ITALIC = "italic"
+        const val UNDERLINE = "underline"
+        const val STRIKE = "strike"
         const val H1 = "h1"
         const val H2 = "h2"
     }

@@ -26,7 +26,8 @@ object NoteStore {
                             body = body,
                             createdAt = item.optLong("createdAt", item.optLong("updatedAt")),
                             updatedAt = item.optLong("updatedAt"),
-                            spans = loadSpans(item.optJSONArray("spans"), body.length)
+                            spans = loadSpans(item.optJSONArray("spans"), body.length),
+                            folderId = item.optString("folderId")
                         )
                     )
                 }
@@ -43,6 +44,7 @@ object NoteStore {
                 val item = array.optJSONObject(i) ?: continue
                 val type = item.optString("type")
                 if (type != NoteSpan.BOLD && type != NoteSpan.ITALIC &&
+                    type != NoteSpan.UNDERLINE && type != NoteSpan.STRIKE &&
                     type != NoteSpan.H1 && type != NoteSpan.H2
                 ) continue
                 val start = item.optInt("start").coerceIn(0, length)
@@ -72,6 +74,7 @@ object NoteStore {
                     .put("createdAt", note.createdAt)
                     .put("updatedAt", note.updatedAt)
                     .put("spans", spans)
+                    .put("folderId", note.folderId)
             )
         }
         val file = File(context.filesDir, FILE_NAME)

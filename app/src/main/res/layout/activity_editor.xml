@@ -65,7 +65,7 @@
         android:orientation="vertical"
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
-        android:paddingBottom="12dp">
+        android:paddingBottom="8dp">
 
         <EditText
             android:id="@+id/title_input"
@@ -94,7 +94,6 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -117,6 +116,20 @@
                 android:textColor="@color/text_muted"
                 android:textSize="12sp" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/folder_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:ellipsize="end"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:minHeight="48dp"
+            android:textColor="@color/text_muted"
+            android:textSize="12sp" />
 
         <EditText
             android:id="@+id/body_input"
@@ -143,71 +156,171 @@
         android:background="@color/divider"
         android:visibility="gone" />
 
-    <LinearLayout
+    <HorizontalScrollView
         android:id="@+id/format_bar"
         android:layout_width="match_parent"
         android:layout_height="52dp"
         android:background="@color/bg"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
+        android:fillViewport="false"
+        android:scrollbars="none"
         android:visibility="gone">
 
-        <TextView
-            android:id="@+id/format_bold"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:contentDescription="@string/bold"
-            android:focusable="false"
-            android:gravity="center"
-            android:text="@string/format_bold_label"
-            android:textColor="@color/text"
-            android:textSize="17sp"
-            android:textStyle="bold" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
 
-        <TextView
-            android:id="@+id/format_italic"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:contentDescription="@string/italic"
-            android:focusable="false"
-            android:gravity="center"
-            android:text="@string/format_italic_label"
-            android:textColor="@color/text"
-            android:textSize="17sp"
-            android:textStyle="italic" />
+            <TextView
+                android:id="@+id/format_bold"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/bold"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_bold_label"
+                android:textColor="@color/text"
+                android:textSize="17sp"
+                android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/format_h1"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:contentDescription="@string/heading_1"
-            android:focusable="false"
-            android:gravity="center"
-            android:text="@string/format_h1_label"
-            android:textColor="@color/text"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            <TextView
+                android:id="@+id/format_italic"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/italic"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_italic_label"
+                android:textColor="@color/text"
+                android:textSize="17sp"
+                android:textStyle="italic" />
 
-        <TextView
-            android:id="@+id/format_h2"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:contentDescription="@string/heading_2"
-            android:focusable="false"
-            android:gravity="center"
-            android:text="@string/format_h2_label"
-            android:textColor="@color/text"
-            android:textSize="15sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+            <TextView
+                android:id="@+id/format_underline"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/underline"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_underline_label"
+                android:textColor="@color/text"
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/format_strike"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/strikethrough"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_strike_label"
+                android:textColor="@color/text"
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/format_h1"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/heading_1"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_h1_label"
+                android:textColor="@color/text"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/format_h2"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/heading_2"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_h2_label"
+                android:textColor="@color/text"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/format_bullet"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/bullet_list"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_bullet_label"
+                android:textColor="@color/text"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/format_number"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/numbered_list"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_number_label"
+                android:textColor="@color/text"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/format_check"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/checklist"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_check_label"
+                android:textColor="@color/text"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/format_quote"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/quote"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_quote_label"
+                android:textColor="@color/text"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/format_clear"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="@string/clear_formatting"
+                android:focusable="false"
+                android:gravity="center"
+                android:text="@string/format_clear_label"
+                android:textColor="@color/text"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </HorizontalScrollView>
 </LinearLayout>

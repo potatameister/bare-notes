@@ -1,18 +1,24 @@
 package com.potatameister.barenotes
 
+import android.content.Intent
+import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Spanned
+import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
+import android.text.style.UnderlineSpan
 import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.doAfterTextChanged
@@ -23,7 +29,14 @@ class NoteEditorActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_NOTE_ID = "note_id"
+        const val EXTRA_FOLDER_ID = "folder_id"
         private const val EXTRA_EDITING = "editing"
+
+        private const val BULLET = "• "
+        private const val CHECK_OPEN = "☐ "
+        private const val CHECK_DONE = "☑ "
+        private const val QUOTE = "❝ "
+        private val NUMBER_PREFIX = Regex("^(\\d+)\\.\\s+")
     }
 
     private lateinit var binding: ActivityEditorBinding
@@ -31,6 +44,9 @@ class NoteEditorActivity : AppCompatActivity() {
     private var isSaved = false
     private var deleted = false
     private var isEditing = false
+    private var folderId = ""
+    private var folders: List<Folder> = emptyList()
+    private var autoListGuard = false
     private val wordSplit = Regex("\\s+")
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,40 +61,60 @@ class NoteEditorActivity : AppCompatActivity() {
             TypedValue.COMPLEX_UNIT_SP,
             SettingsPrefs.textSizeSp(this).toFloat()
         )
+        binding.formatUnderline.paintFlags =
+            binding.formatUnderline.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+        binding.formatStrike.paintFlags =
+            binding.formatStrike.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
 
         val noteId = intent.getStringExtra(EXTRA_NOTE_ID)
             ?: savedInstanceState?.getString(EXTRA_NOTE_ID)
         note = if (noteId != null) {
             NoteStore.load(this).firstOrNull { it.id == noteId }
                 ?.also { isSaved = true }
-                ?: newNote()
+                ?: newNote(intent.getStringExtra(EXTRA_FOLDER_ID).orEmpty())
         } else {
-            newNote()
+            newNote(intent.getStringExtra(EXTRA_FOLDER_ID).orEmpty())
         }
         note?.let { intent.putExtra(EXTRA_NOTE_ID, it.id) }
+        folderId = note?.folderId.orEmpty()
+
+        folders = FolderStore.load(this)
+        if (folderId.isNotEmpty() && folders.none { it.id == folderId }) {
+            folderId = ""
+        }
 
         binding.titleInput.setText(note?.title.orEmpty())
         binding.bodyInput.setText(note?.body.orEmpty())
         applySpans(note?.spans.orEmpty())
 
-        binding.bodyInput.doAfterTextChanged { updateMeta() }
+        binding.bodyInput.doAfterTextChanged { editable ->
+            updateMeta()
+            if (!autoListGuard && editable != null) continueList(editable)
+        }
 
         binding.backButton.setOnClickListener { finish() }
-        binding.doneButton.setOnClickListener {
-            save()
-            finish()
-        }
+        binding.doneButton.setOnClickListener { saveAndStay() }
         binding.deleteButton.setOnClickListener { confirmDelete() }
+        binding.folderRow.setOnClickListener { chooseFolder() }
+
         binding.formatBold.setOnClickListener { toggleStyle(Typeface.BOLD) }
         binding.formatItalic.setOnClickListener { toggleStyle(Typeface.ITALIC) }
+        binding.formatUnderline.setOnClickListener { toggleUnderline() }
+        binding.formatStrike.setOnClickListener { toggleStrike() }
         binding.formatH1.setOnClickListener { toggleHeading(1) }
         binding.formatH2.setOnClickListener { toggleHeading(2) }
+        binding.formatBullet.setOnClickListener { toggleBullet() }
+        binding.formatNumber.setOnClickListener { toggleNumber() }
+        binding.formatCheck.setOnClickListener { toggleCheck() }
+        binding.formatQuote.setOnClickListener { toggleQuote() }
+        binding.formatClear.setOnClickListener { clearFormatting() }
 
         setupTapToEdit(binding.titleInput, focusTitle = true)
         setupTapToEdit(binding.bodyInput, focusTitle = false)
 
         isEditing = savedInstanceState?.getBoolean(EXTRA_EDITING) ?: (noteId == null)
         renderMode()
+        refreshFolderRow()
         updateMeta()
 
         if (isEditing) {
@@ -93,6 +129,18 @@ class NoteEditorActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        folders = FolderStore.load(this)
+        if (folderId.isNotEmpty() && folders.none { it.id == folderId }) {
+            folderId = ""
+            refreshFolderRow()
+            save()
+        } else {
+            refreshFolderRow()
+        }
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(EXTRA_NOTE_ID, note?.id)
@@ -104,14 +152,15 @@ class NoteEditorActivity : AppCompatActivity() {
         save()
     }
 
-    private fun newNote(): Note {
+    private fun newNote(folderId: String): Note {
         val now = System.currentTimeMillis()
         return Note(
             id = UUID.randomUUID().toString(),
             title = "",
             body = "",
             createdAt = now,
-            updatedAt = now
+            updatedAt = now,
+            folderId = folderId
         )
     }
 
@@ -130,6 +179,9 @@ class NoteEditorActivity : AppCompatActivity() {
         val detector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapUp(e: MotionEvent): Boolean {
                 if (!isEditing) {
+                    if (view === binding.bodyInput && toggleChecklistAt(e)) {
+                        return true
+                    }
                     enterEditMode(focusTitle)
                     return true
                 }
@@ -155,15 +207,42 @@ class NoteEditorActivity : AppCompatActivity() {
         target.post { showKeyboard(target) }
     }
 
+    private fun saveAndStay() {
+        save()
+        if (!isSaved) {
+            finish()
+            return
+        }
+        isEditing = false
+        renderMode()
+        val imm = getSystemService(InputMethodManager::class.java)
+        imm?.hideSoftInputFromWindow(binding.bodyInput.windowToken, 0)
+        binding.bodyInput.clearFocus()
+        binding.titleInput.clearFocus()
+        updateMeta()
+    }
+
     private fun showKeyboard(view: View) {
         val imm = getSystemService(InputMethodManager::class.java)
         imm?.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
     }
 
+    private fun refreshFolderRow() {
+        val name = folders.firstOrNull { it.id == folderId }?.name
+            ?: getString(R.string.unfiled)
+        binding.folderRow.text = getString(R.string.folder_label, name)
+    }
+
     private fun updateMeta() {
         val body = binding.bodyInput.text?.toString().orEmpty()
         val characters = body.length
-        val words = if (body.isBlank()) 0 else body.trim().split(wordSplit).size
+        val words = if (body.isBlank()) {
+            0
+        } else {
+            body.trim().split(wordSplit).count { token ->
+                token.any { it.isLetterOrDigit() }
+            }
+        }
 
         binding.metaCounts.text = getString(
             R.string.meta_counts,
@@ -199,6 +278,18 @@ class NoteEditorActivity : AppCompatActivity() {
                     end,
                     Spanned.SPAN_EXCLUSIVE_INCLUSIVE
                 )
+                NoteSpan.UNDERLINE -> text.setSpan(
+                    UnderlineSpan(),
+                    start,
+                    end,
+                    Spanned.SPAN_EXCLUSIVE_INCLUSIVE
+                )
+                NoteSpan.STRIKE -> text.setSpan(
+                    StrikethroughSpan(),
+                    start,
+                    end,
+                    Spanned.SPAN_EXCLUSIVE_INCLUSIVE
+                )
                 NoteSpan.H1 -> text.setSpan(
                     HeadingSpan(1),
                     start,
@@ -230,6 +321,22 @@ class NoteEditorActivity : AppCompatActivity() {
                     result.add(NoteSpan(NoteSpan.BOLD, start, end))
                     result.add(NoteSpan(NoteSpan.ITALIC, start, end))
                 }
+            }
+        }
+
+        text.getSpans(0, text.length, UnderlineSpan::class.java).forEach { span ->
+            val start = text.getSpanStart(span)
+            val end = text.getSpanEnd(span)
+            if (start >= 0 && end > start) {
+                result.add(NoteSpan(NoteSpan.UNDERLINE, start, end))
+            }
+        }
+
+        text.getSpans(0, text.length, StrikethroughSpan::class.java).forEach { span ->
+            val start = text.getSpanStart(span)
+            val end = text.getSpanEnd(span)
+            if (start >= 0 && end > start) {
+                result.add(NoteSpan(NoteSpan.STRIKE, start, end))
             }
         }
 
@@ -285,13 +392,76 @@ class NoteEditorActivity : AppCompatActivity() {
         updateMeta()
     }
 
+    private fun toggleUnderline() {
+        val text = binding.bodyInput.text
+        var start = binding.bodyInput.selectionStart
+        var end = binding.bodyInput.selectionEnd
+        if (start > end) {
+            val swap = start
+            start = end
+            end = swap
+        }
+        if (start == end) {
+            val bounds = wordBounds(text, start)
+            start = bounds.first
+            end = bounds.second
+        }
+        if (start >= end) return
+
+        val existing = text.getSpans(start, end, UnderlineSpan::class.java).filter {
+            text.getSpanStart(it) <= start && text.getSpanEnd(it) >= end
+        }
+        if (existing.isNotEmpty()) {
+            existing.forEach { text.removeSpan(it) }
+        } else {
+            text.setSpan(
+                UnderlineSpan(),
+                start,
+                end,
+                Spanned.SPAN_EXCLUSIVE_INCLUSIVE
+            )
+        }
+        binding.bodyInput.setSelection(start, end)
+        updateMeta()
+    }
+
+    private fun toggleStrike() {
+        val text = binding.bodyInput.text
+        var start = binding.bodyInput.selectionStart
+        var end = binding.bodyInput.selectionEnd
+        if (start > end) {
+            val swap = start
+            start = end
+            end = swap
+        }
+        if (start == end) {
+            val bounds = wordBounds(text, start)
+            start = bounds.first
+            end = bounds.second
+        }
+        if (start >= end) return
+
+        val existing = text.getSpans(start, end, StrikethroughSpan::class.java).filter {
+            text.getSpanStart(it) <= start && text.getSpanEnd(it) >= end
+        }
+        if (existing.isNotEmpty()) {
+            existing.forEach { text.removeSpan(it) }
+        } else {
+            text.setSpan(
+                StrikethroughSpan(),
+                start,
+                end,
+                Spanned.SPAN_EXCLUSIVE_INCLUSIVE
+            )
+        }
+        binding.bodyInput.setSelection(start, end)
+        updateMeta()
+    }
+
     private fun toggleHeading(level: Int) {
         val text = binding.bodyInput.text
         val cursor = binding.bodyInput.selectionStart.coerceAtLeast(0)
-        val lineStart = text.lastIndexOf('\n', (cursor - 1).coerceAtLeast(0))
-            .let { if (it < 0) 0 else it + 1 }
-        val lineEnd = text.indexOf('\n', cursor)
-            .let { if (it < 0) text.length else it }
+        val (lineStart, lineEnd) = lineBounds(cursor, text)
         if (lineStart >= lineEnd) return
 
         val headings = text.getSpans(lineStart, lineEnd, HeadingSpan::class.java)
@@ -314,6 +484,142 @@ class NoteEditorActivity : AppCompatActivity() {
         updateMeta()
     }
 
+    private fun currentLine(): Triple<Int, Int, String> {
+        val text = binding.bodyInput.text
+        val cursor = binding.bodyInput.selectionStart.coerceAtLeast(0)
+        val (start, end) = lineBounds(cursor, text)
+        return Triple(start, end, text.subSequence(start, end).toString())
+    }
+
+    private fun lineBounds(cursor: Int, text: CharSequence): Pair<Int, Int> {
+        val start = if (cursor <= 0) {
+            0
+        } else {
+            text.lastIndexOf('\n', cursor - 1).let { if (it < 0) 0 else it + 1 }
+        }
+        val end = text.indexOf('\n', cursor)
+            .let { if (it < 0) text.length else it }
+        return start to end
+    }
+
+    private fun splitPrefix(line: String): Pair<String, String> {
+        for (prefix in listOf(BULLET, CHECK_OPEN, CHECK_DONE, QUOTE)) {
+            if (line.startsWith(prefix)) {
+                return prefix to line.substring(prefix.length)
+            }
+        }
+        val match = NUMBER_PREFIX.find(line)
+        if (match != null) {
+            return match.value to line.substring(match.value.length)
+        }
+        return "" to line
+    }
+
+    private fun numberedPrefix(prefix: String): Int? =
+        NUMBER_PREFIX.find(prefix)?.groupValues?.getOrNull(1)?.toIntOrNull()
+
+    private fun applyPrefix(newPrefix: String) {
+        val text = binding.bodyInput.text
+        val cursor = binding.bodyInput.selectionStart.coerceAtLeast(0)
+        val (lineStart, lineEnd) = lineBounds(cursor, text)
+        val line = text.subSequence(lineStart, lineEnd).toString()
+        val (oldPrefix, content) = splitPrefix(line)
+        val offset = (cursor - lineStart - oldPrefix.length).coerceIn(0, content.length)
+
+        autoListGuard = true
+        text.replace(lineStart, lineEnd, newPrefix + content)
+        binding.bodyInput.setSelection(lineStart + newPrefix.length + offset)
+        autoListGuard = false
+        updateMeta()
+    }
+
+    private fun toggleBullet() {
+        val (_, _, line) = currentLine()
+        val (old, _) = splitPrefix(line)
+        applyPrefix(if (old == BULLET) "" else BULLET)
+    }
+
+    private fun toggleQuote() {
+        val (_, _, line) = currentLine()
+        val (old, _) = splitPrefix(line)
+        applyPrefix(if (old == QUOTE) "" else QUOTE)
+    }
+
+    private fun toggleCheck() {
+        val (_, _, line) = currentLine()
+        val (old, _) = splitPrefix(line)
+        applyPrefix(
+            when (old) {
+                CHECK_OPEN -> CHECK_DONE
+                CHECK_DONE -> ""
+                else -> CHECK_OPEN
+            }
+        )
+    }
+
+    private fun toggleNumber() {
+        val text = binding.bodyInput.text
+        val (lineStart, _, line) = currentLine()
+        val (old, _) = splitPrefix(line)
+
+        if (numberedPrefix(old) != null) {
+            applyPrefix("")
+            return
+        }
+
+        val previousNumber = if (lineStart > 1) {
+            val prevEnd = lineStart - 1
+            val prevStart = text.lastIndexOf('\n', prevEnd - 1)
+                .let { if (it < 0) 0 else it + 1 }
+            val prevLine = text.subSequence(prevStart, prevEnd).toString()
+            numberedPrefix(splitPrefix(prevLine).first) ?: 0
+        } else {
+            0
+        }
+        applyPrefix("${previousNumber + 1}. ")
+    }
+
+    private fun clearFormatting() {
+        val text = binding.bodyInput.text
+        var start = binding.bodyInput.selectionStart
+        var end = binding.bodyInput.selectionEnd
+        if (start > end) {
+            val swap = start
+            start = end
+            end = swap
+        }
+        val blockStart = if (start <= 0) {
+            0
+        } else {
+            text.lastIndexOf('\n', start - 1).let { if (it < 0) 0 else it + 1 }
+        }
+        val blockEnd = text.indexOf('\n', end)
+            .let { if (it < 0) text.length else it }
+
+        if (blockStart > blockEnd) return
+
+        text.getSpans(blockStart, blockEnd, StyleSpan::class.java)
+            .forEach { text.removeSpan(it) }
+        text.getSpans(blockStart, blockEnd, UnderlineSpan::class.java)
+            .forEach { text.removeSpan(it) }
+        text.getSpans(blockStart, blockEnd, StrikethroughSpan::class.java)
+            .forEach { text.removeSpan(it) }
+        text.getSpans(blockStart, blockEnd, HeadingSpan::class.java)
+            .forEach { text.removeSpan(it) }
+
+        val block = text.subSequence(blockStart, blockEnd).toString()
+        val stripped = block.split('\n')
+            .joinToString("\n") { splitPrefix(it).second }
+
+        autoListGuard = true
+        text.replace(blockStart, blockEnd, stripped)
+        binding.bodyInput.setSelection(
+            (blockStart + stripped.length).coerceAtMost(text.length)
+        )
+        autoListGuard = false
+        updateMeta()
+    }
+
     private fun wordBounds(text: CharSequence, position: Int): Pair<Int, Int> {
         if (text.isEmpty()) return 0 to 0
         var start = position.coerceIn(0, text.length)
@@ -321,6 +627,124 @@ class NoteEditorActivity : AppCompatActivity() {
         while (start > 0 && !text[start - 1].isWhitespace()) start--
         while (end < text.length && !text[end].isWhitespace()) end++
         return start to end
+    }
+
+    private fun continueList(editable: android.text.Editable) {
+        val cursor = binding.bodyInput.selectionStart
+        if (cursor <= 0 || cursor > editable.length) return
+        if (editable[cursor - 1] != '\n') return
+
+        val previousEnd = cursor - 1
+        if (previousEnd <= 0) return
+        val previousStart = editable.lastIndexOf('\n', previousEnd - 1)
+            .let { if (it < 0) 0 else it + 1 }
+        val previousLine = editable.subSequence(previousStart, previousEnd).toString()
+        val (prefix, content) = splitPrefix(previousLine)
+        if (prefix.isEmpty()) return
+
+        if (content.isBlank()) {
+            autoListGuard = true
+            editable.replace(previousStart, previousEnd, content)
+            binding.bodyInput.setSelection(previousStart + content.length + 1)
+            autoListGuard = false
+            return
+        }
+
+        val nextPrefix = when {
+            prefix == BULLET -> BULLET
+            prefix == CHECK_OPEN || prefix == CHECK_DONE -> CHECK_OPEN
+            prefix == QUOTE -> QUOTE
+            numberedPrefix(prefix) != null -> "${(numberedPrefix(prefix) ?: 0) + 1}. "
+            else -> return
+        }
+
+        autoListGuard = true
+        editable.insert(cursor, nextPrefix)
+        binding.bodyInput.setSelection(cursor + nextPrefix.length)
+        autoListGuard = false
+    }
+
+    private fun toggleChecklistAt(event: MotionEvent): Boolean {
+        val text = binding.bodyInput.text
+        if (text.isEmpty()) return false
+        val offset = binding.bodyInput.getOffsetForPosition(event.x, event.y)
+        val position = offset.coerceIn(0, text.length - 1)
+        val (lineStart, lineEnd) = lineBounds(position, text)
+        val line = text.subSequence(lineStart, lineEnd).toString()
+        val replacement = when {
+            line.startsWith(CHECK_OPEN) -> CHECK_DONE
+            line.startsWith(CHECK_DONE) -> CHECK_OPEN
+            else -> return false
+        }
+        val oldLength = if (line.startsWith(CHECK_OPEN)) CHECK_OPEN.length else CHECK_DONE.length
+
+        autoListGuard = true
+        text.replace(lineStart, lineStart + oldLength, replacement)
+        autoListGuard = false
+        save()
+        updateMeta()
+        return true
+    }
+
+    private fun chooseFolder() {
+        folders = FolderStore.load(this)
+        val items = mutableListOf<CharSequence>()
+        items.add(getString(R.string.unfiled))
+        items.addAll(folders.map { it.name })
+        items.add(getString(R.string.folder_new))
+        items.add(getString(R.string.folder_manage))
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.folder_pick_title)
+            .setItems(items.toTypedArray()) { _, which ->
+                when {
+                    which == 0 -> setFolder("")
+                    which in 1..folders.size -> setFolder(folders[which - 1].id)
+                    which == folders.size + 1 -> showNewFolderDialog()
+                    which == folders.size + 2 -> {
+                        startActivity(Intent(this, FoldersActivity::class.java))
+                    }
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun setFolder(id: String) {
+        folderId = id
+        refreshFolderRow()
+        save()
+    }
+
+    private fun showNewFolderDialog() {
+        val input = EditText(this).apply {
+            hint = getString(R.string.folder_name)
+            setSingleLine()
+            setTextColor(ContextCompat.getColor(this@NoteEditorActivity, R.color.text))
+            setHintTextColor(
+                ContextCompat.getColor(this@NoteEditorActivity, R.color.text_muted)
+            )
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.new_folder)
+            .setView(input)
+            .setPositiveButton(R.string.create) { _, _ ->
+                val name = input.text?.toString()?.trim().orEmpty()
+                if (name.isBlank()) {
+                    Toast.makeText(this, R.string.folder_name_required, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                if (folders.any { it.name.equals(name, ignoreCase = true) }) {
+                    Toast.makeText(this, R.string.folder_name_exists, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val folder = Folder(UUID.randomUUID().toString(), name)
+                FolderStore.save(this, folders + folder)
+                folders = FolderStore.load(this)
+                setFolder(folder.id)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun confirmDelete() {
@@ -346,13 +770,18 @@ class NoteEditorActivity : AppCompatActivity() {
         val body = binding.bodyInput.text?.toString().orEmpty()
         val spans = collectSpans()
 
-        if (!isSaved && title.isEmpty() && body.isEmpty()) return
-        if (title == current.title && body == current.body && spans == current.spans) return
+        if (!isSaved && title.isEmpty() && body.isBlank()) return
+        if (title == current.title &&
+            body == current.body &&
+            spans == current.spans &&
+            folderId == current.folderId
+        ) return
 
         val updated = current.copy(
             title = title,
             body = body,
             spans = spans,
+            folderId = folderId,
             updatedAt = System.currentTimeMillis()
         )
 

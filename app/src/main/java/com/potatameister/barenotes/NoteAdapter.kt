@@ -2,6 +2,7 @@ package com.potatameister.barenotes
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.potatameister.barenotes.databinding.ItemNoteBinding
@@ -49,6 +50,12 @@ class NoteAdapter(
 
         fun bind(note: Note) {
             val context = binding.root.context
+            binding.noteTitle.setTextColor(ContextCompat.getColor(context, R.color.text))
+            binding.notePreview.setTextColor(ContextCompat.getColor(context, R.color.text_muted))
+            binding.noteDate.setTextColor(ContextCompat.getColor(context, R.color.text_muted))
+            binding.noteDivider.setBackgroundColor(
+                ContextCompat.getColor(context, R.color.divider)
+            )
             binding.noteTitle.text = note.title.ifBlank {
                 context.getString(R.string.untitled)
             }

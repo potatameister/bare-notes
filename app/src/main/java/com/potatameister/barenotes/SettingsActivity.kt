@@ -1,5 +1,6 @@
 package com.potatameister.barenotes
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
@@ -28,6 +29,9 @@ class SettingsActivity : AppCompatActivity() {
         binding.backButton.setOnClickListener { finish() }
         binding.editorTextRow.setOnClickListener { chooseTextSize() }
         binding.sortRow.setOnClickListener { chooseSort() }
+        binding.foldersRow.setOnClickListener {
+            startActivity(Intent(this, FoldersActivity::class.java))
+        }
 
         render()
     }
