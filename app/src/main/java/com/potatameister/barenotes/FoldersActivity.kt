@@ -58,7 +58,7 @@ class FoldersActivity : AppCompatActivity() {
     }
 
     private fun createRow(folder: Folder): View {
-        val text = ContextCompat.getColor(this, R.color.text)
+        val textColor = ContextCompat.getColor(this, R.color.text)
         val icon = ContextCompat.getColor(this, R.color.icon)
 
         val row = LinearLayout(this).apply {
@@ -74,7 +74,7 @@ class FoldersActivity : AppCompatActivity() {
         val name = TextView(this).apply {
             text = folder.name
             textSize = 16f
-            setTextColor(text)
+            setTextColor(textColor)
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.END
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
