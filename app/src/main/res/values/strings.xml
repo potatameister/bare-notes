@@ -20,6 +20,7 @@
     <string name="folder_name_exists">That folder already exists.</string>
     <string name="no_folders">No folders yet</string>
     <string name="no_folders_hint">Tap + to create one.</string>
+    <string name="folders_hint">Tap a folder to rename it. Deleting a folder moves its notes to Unfiled.</string>
     <string name="folder_label">Folder · %1$s</string>
     <string name="folder_pick_title">Folder</string>
     <string name="folder_new">New folder…</string>
@@ -71,6 +72,7 @@
     <string name="delete_note_desc">Delete note</string>
 
     <string name="edited_relative">Edited %1$s</string>
+    <string name="created_relative">Created %1$s</string>
     <string name="edited_absolute">Edited %1$s</string>
     <string name="just_now">just now</string>
     <string name="new_note">New note</string>

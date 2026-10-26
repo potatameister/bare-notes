@@ -50,6 +50,7 @@ class FoldersActivity : AppCompatActivity() {
     private fun refresh() {
         folders = FolderStore.load(this)
         binding.foldersEmpty.visibility = if (folders.isEmpty()) View.VISIBLE else View.GONE
+        binding.foldersHint.visibility = if (folders.isEmpty()) View.GONE else View.VISIBLE
         binding.folderList.removeAllViews()
 
         folders.forEach { folder ->

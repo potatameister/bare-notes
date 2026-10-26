@@ -145,6 +145,7 @@ class MainActivity : AppCompatActivity() {
 
         notes.clear()
         notes.addAll(sorted)
+        adapter.setShowCreated(SettingsPrefs.sortOrder(this) == SettingsPrefs.SORT_CREATED)
         adapter.submit(notes)
         renderFolders()
         updateTitle()

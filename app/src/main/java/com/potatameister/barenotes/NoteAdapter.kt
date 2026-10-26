@@ -12,6 +12,14 @@ class NoteAdapter(
 ) : RecyclerView.Adapter<NoteAdapter.NoteViewHolder>() {
 
     private val items = mutableListOf<Note>()
+    private var showCreated = false
+
+    fun setShowCreated(show: Boolean) {
+        if (showCreated != show) {
+            showCreated = show
+            notifyDataSetChanged()
+        }
+    }
 
     fun submit(newItems: List<Note>) {
         val oldItems = items.toList()
@@ -43,7 +51,7 @@ class NoteAdapter(
 
     override fun getItemCount(): Int = items.size
 
-    class NoteViewHolder(
+    inner class NoteViewHolder(
         private val binding: ItemNoteBinding,
         private val onClick: (Note) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
@@ -63,9 +71,10 @@ class NoteAdapter(
                 .lineSequence()
                 .firstOrNull { it.isNotBlank() }
                 ?: context.getString(R.string.no_body)
+            val time = if (showCreated) note.createdAt else note.updatedAt
             binding.noteDate.text = context.getString(
-                R.string.edited_relative,
-                NoteTime.relative(context, note.updatedAt)
+                if (showCreated) R.string.created_relative else R.string.edited_relative,
+                NoteTime.relative(context, time)
             )
             binding.root.setOnClickListener { onClick(note) }
         }
