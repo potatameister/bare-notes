@@ -10,6 +10,7 @@ import android.util.TypedValue
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -44,6 +45,21 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                when {
+                    binding.drawerLayout.isDrawerOpen(binding.sidebar) -> {
+                        binding.drawerLayout.closeDrawer(binding.sidebar)
+                    }
+                    filter !== NoteFilter.All -> {
+                        filter = NoteFilter.All
+                        loadAll()
+                    }
+                    else -> finish()
+                }
+            }
+        })
 
         if (savedInstanceState != null) {
             filter = when (savedInstanceState.getString(STATE_FILTER_TYPE)) {
