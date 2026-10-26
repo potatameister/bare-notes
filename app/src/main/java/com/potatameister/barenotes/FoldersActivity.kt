@@ -6,6 +6,7 @@ import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -104,55 +105,73 @@ class FoldersActivity : AppCompatActivity() {
     }
 
     private fun showAddDialog() {
-        val input = folderInput("")
-        AlertDialog.Builder(this)
-            .setTitle(R.string.new_folder)
-            .setView(input)
-            .setPositiveButton(R.string.create) { _, _ ->
-                createFolder(input.text?.toString()?.trim().orEmpty())
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+        showNameDialog(R.string.new_folder, R.string.create, "") { name ->
+            createFolder(name)
+        }
     }
 
     private fun showRenameDialog(folder: Folder) {
-        val input = folderInput(folder.name)
-        AlertDialog.Builder(this)
-            .setTitle(R.string.rename_folder)
-            .setView(input)
-            .setPositiveButton(R.string.save) { _, _ ->
-                renameFolder(folder, input.text?.toString()?.trim().orEmpty())
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+        showNameDialog(R.string.rename_folder, R.string.save, folder.name) { name ->
+            renameFolder(folder, name)
+        }
     }
 
-    private fun createFolder(name: String) {
+    private fun showNameDialog(
+        titleRes: Int,
+        positiveRes: Int,
+        initial: String,
+        onSave: (String) -> Boolean
+    ) {
+        val input = folderInput(initial)
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(titleRes)
+            .setView(input)
+            .setPositiveButton(positiveRes, null)
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        dialog.setOnShowListener {
+            input.requestFocus()
+            dialog.window?.setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+            )
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val name = input.text?.toString()?.trim().orEmpty()
+                if (onSave(name)) {
+                    dialog.dismiss()
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun createFolder(name: String): Boolean {
         if (name.isBlank()) {
             toast(R.string.folder_name_required)
-            return
+            return false
         }
         if (folders.any { it.name.equals(name, ignoreCase = true) }) {
             toast(R.string.folder_name_exists)
-            return
+            return false
         }
         val updated = folders + Folder(UUID.randomUUID().toString(), name)
         FolderStore.save(this, updated)
         refresh()
+        return true
     }
 
-    private fun renameFolder(folder: Folder, name: String) {
+    private fun renameFolder(folder: Folder, name: String): Boolean {
         if (name.isBlank()) {
             toast(R.string.folder_name_required)
-            return
+            return false
         }
         if (folders.any { it.id != folder.id && it.name.equals(name, ignoreCase = true) }) {
             toast(R.string.folder_name_exists)
-            return
+            return false
         }
         val updated = folders.map { if (it.id == folder.id) it.copy(name = name) else it }
         FolderStore.save(this, updated)
         refresh()
+        return true
     }
 
     private fun confirmDelete(folder: Folder) {

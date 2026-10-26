@@ -96,7 +96,7 @@
     <string name="format_number_label">1.</string>
     <string name="format_check_label">☑</string>
     <string name="format_quote_label">❝</string>
-    <string name="format_clear_label">Tx</string>
+    <string name="format_clear_label">Clear</string>
 
     <plurals name="character_count">
         <item quantity="one">%1$d character</item>

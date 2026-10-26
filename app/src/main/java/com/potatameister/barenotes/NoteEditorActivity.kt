@@ -12,6 +12,7 @@ import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
@@ -725,26 +726,41 @@ class NoteEditorActivity : AppCompatActivity() {
                 ContextCompat.getColor(this@NoteEditorActivity, R.color.text_muted)
             )
         }
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.new_folder)
             .setView(input)
-            .setPositiveButton(R.string.create) { _, _ ->
-                val name = input.text?.toString()?.trim().orEmpty()
-                if (name.isBlank()) {
-                    Toast.makeText(this, R.string.folder_name_required, Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                if (folders.any { it.name.equals(name, ignoreCase = true) }) {
-                    Toast.makeText(this, R.string.folder_name_exists, Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                val folder = Folder(UUID.randomUUID().toString(), name)
-                FolderStore.save(this, folders + folder)
-                folders = FolderStore.load(this)
-                setFolder(folder.id)
-            }
+            .setPositiveButton(R.string.create, null)
             .setNegativeButton(R.string.cancel, null)
-            .show()
+            .create()
+        dialog.setOnShowListener {
+            input.requestFocus()
+            dialog.window?.setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+            )
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val name = input.text?.toString()?.trim().orEmpty()
+                if (createFolderForNote(name)) {
+                    dialog.dismiss()
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun createFolderForNote(name: String): Boolean {
+        if (name.isBlank()) {
+            Toast.makeText(this, R.string.folder_name_required, Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (folders.any { it.name.equals(name, ignoreCase = true) }) {
+            Toast.makeText(this, R.string.folder_name_exists, Toast.LENGTH_SHORT).show()
+            return false
+        }
+        val folder = Folder(UUID.randomUUID().toString(), name)
+        FolderStore.save(this, folders + folder)
+        folders = FolderStore.load(this)
+        setFolder(folder.id)
+        return true
     }
 
     private fun confirmDelete() {

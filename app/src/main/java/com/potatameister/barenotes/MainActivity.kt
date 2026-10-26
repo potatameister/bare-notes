@@ -147,7 +147,17 @@ class MainActivity : AppCompatActivity() {
         notes.addAll(sorted)
         adapter.submit(notes)
         renderFolders()
+        updateTitle()
         updateEmptyState()
+    }
+
+    private fun updateTitle() {
+        binding.screenTitle.text = when (val current = filter) {
+            NoteFilter.All -> getString(R.string.app_name)
+            NoteFilter.Unfiled -> getString(R.string.unfiled)
+            is NoteFilter.InFolder -> folders.firstOrNull { it.id == current.id }?.name
+                ?: getString(R.string.app_name)
+        }
     }
 
     private fun renderFolders() {
