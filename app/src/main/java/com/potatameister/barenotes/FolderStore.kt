@@ -12,27 +12,25 @@ object FolderStore {
     fun load(context: Context): List<Folder> {
         val file = File(context.filesDir, FILE_NAME)
         if (!file.exists()) return emptyList()
-
         return try {
-            val array = JSONArray(file.readText())
-            buildList {
-                for (i in 0 until array.length()) {
-                    val item = array.optJSONObject(i) ?: continue
-                    val id = item.optString("id")
-                    val name = item.optString("name").trim()
-                    if (id.isNotBlank() && name.isNotBlank()) {
-                        add(Folder(id, name))
-                    }
-                }
-            }
-                .distinctBy { it.id }
-                .sortedBy { it.name.lowercase() }
+            decode(JSONArray(file.readText()))
         } catch (_: Exception) {
             emptyList()
         }
     }
 
     fun save(context: Context, folders: List<Folder>) {
+        val json = encode(folders).toString()
+        val file = File(context.filesDir, FILE_NAME)
+        val temp = File(context.filesDir, "$FILE_NAME.tmp")
+        temp.writeText(json)
+        if (!temp.renameTo(file)) {
+            file.writeText(json)
+            temp.delete()
+        }
+    }
+
+    fun encode(folders: List<Folder>): JSONArray {
         val array = JSONArray()
         folders.forEach { folder ->
             array.put(
@@ -41,12 +39,17 @@ object FolderStore {
                     .put("name", folder.name)
             )
         }
-        val file = File(context.filesDir, FILE_NAME)
-        val temp = File(context.filesDir, "$FILE_NAME.tmp")
-        temp.writeText(array.toString())
-        if (!temp.renameTo(file)) {
-            file.writeText(array.toString())
-            temp.delete()
+        return array
+    }
+
+    fun decode(array: JSONArray): List<Folder> = buildList {
+        for (i in 0 until array.length()) {
+            val item = array.optJSONObject(i) ?: continue
+            val id = item.optString("id")
+            val name = item.optString("name").trim()
+            if (id.isNotBlank() && name.isNotBlank()) add(Folder(id, name))
         }
     }
+        .distinctBy { it.id }
+        .sortedBy { it.name.lowercase() }
 }

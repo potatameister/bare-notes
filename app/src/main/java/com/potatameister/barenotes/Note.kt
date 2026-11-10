@@ -22,5 +22,7 @@ data class NoteSpan(
         const val STRIKE = "strike"
         const val H1 = "h1"
         const val H2 = "h2"
+
+        val TYPES = setOf(BOLD, ITALIC, UNDERLINE, STRIKE, H1, H2)
     }
 }

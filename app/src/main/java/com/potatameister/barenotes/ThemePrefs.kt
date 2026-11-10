@@ -2,36 +2,44 @@ package com.potatameister.barenotes
 
 import android.content.Context
 import android.content.res.Configuration
-import androidx.appcompat.app.AppCompatDelegate
+
+enum class ThemeMode {
+    SYSTEM,
+    LIGHT,
+    DARK
+}
 
 object ThemePrefs {
 
     private const val FILE = "settings"
-    private const val KEY = "dark_mode"
-    private const val LIGHT = "light"
-    private const val DARK = "dark"
+    private const val KEY = "theme_mode"
 
-    fun isDark(context: Context): Boolean =
-        (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-
-    fun applyStored(context: Context) {
+    fun mode(context: Context): ThemeMode =
         when (prefs(context).getString(KEY, null)) {
-            DARK -> apply(AppCompatDelegate.MODE_NIGHT_YES)
-            LIGHT -> apply(AppCompatDelegate.MODE_NIGHT_NO)
+            "light" -> ThemeMode.LIGHT
+            "dark" -> ThemeMode.DARK
+            else -> ThemeMode.SYSTEM
         }
-    }
 
-    fun save(context: Context, dark: Boolean) {
+    fun save(context: Context, mode: ThemeMode) {
         prefs(context).edit()
-            .putString(KEY, if (dark) DARK else LIGHT)
+            .putString(
+                KEY,
+                when (mode) {
+                    ThemeMode.SYSTEM -> "system"
+                    ThemeMode.LIGHT -> "light"
+                    ThemeMode.DARK -> "dark"
+                }
+            )
             .apply()
     }
 
-    private fun apply(mode: Int) {
-        if (AppCompatDelegate.getDefaultNightMode() != mode) {
-            AppCompatDelegate.setDefaultNightMode(mode)
-        }
+    fun resolveDark(context: Context): Boolean = when (mode(context)) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM ->
+            (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                Configuration.UI_MODE_NIGHT_YES
     }
 
     private fun prefs(context: Context) =

@@ -12,49 +12,25 @@ object NoteStore {
     fun load(context: Context): List<Note> {
         val file = File(context.filesDir, FILE_NAME)
         if (!file.exists()) return emptyList()
-
         return try {
-            val array = JSONArray(file.readText())
-            buildList {
-                for (i in 0 until array.length()) {
-                    val item = array.getJSONObject(i)
-                    val body = item.optString("body")
-                    add(
-                        Note(
-                            id = item.optString("id"),
-                            title = item.optString("title"),
-                            body = body,
-                            createdAt = item.optLong("createdAt", item.optLong("updatedAt")),
-                            updatedAt = item.optLong("updatedAt"),
-                            spans = loadSpans(item.optJSONArray("spans"), body.length),
-                            folderId = item.optString("folderId")
-                        )
-                    )
-                }
-            }
+            decode(JSONArray(file.readText()))
         } catch (_: Exception) {
             emptyList()
         }
     }
 
-    private fun loadSpans(array: JSONArray?, length: Int): List<NoteSpan> {
-        if (array == null) return emptyList()
-        return buildList {
-            for (i in 0 until array.length()) {
-                val item = array.optJSONObject(i) ?: continue
-                val type = item.optString("type")
-                if (type != NoteSpan.BOLD && type != NoteSpan.ITALIC &&
-                    type != NoteSpan.UNDERLINE && type != NoteSpan.STRIKE &&
-                    type != NoteSpan.H1 && type != NoteSpan.H2
-                ) continue
-                val start = item.optInt("start").coerceIn(0, length)
-                val end = item.optInt("end").coerceIn(0, length)
-                if (start < end) add(NoteSpan(type, start, end))
-            }
-        }.distinct().sortedWith(compareBy({ it.start }, { it.end }, { it.type }))
+    fun save(context: Context, notes: List<Note>) {
+        val json = encode(notes).toString()
+        val file = File(context.filesDir, FILE_NAME)
+        val temp = File(context.filesDir, "$FILE_NAME.tmp")
+        temp.writeText(json)
+        if (!temp.renameTo(file)) {
+            file.writeText(json)
+            temp.delete()
+        }
     }
 
-    fun save(context: Context, notes: List<Note>) {
+    fun encode(notes: List<Note>): JSONArray {
         val array = JSONArray()
         notes.forEach { note ->
             val spans = JSONArray()
@@ -77,12 +53,38 @@ object NoteStore {
                     .put("folderId", note.folderId)
             )
         }
-        val file = File(context.filesDir, FILE_NAME)
-        val temp = File(context.filesDir, "$FILE_NAME.tmp")
-        temp.writeText(array.toString())
-        if (!temp.renameTo(file)) {
-            file.writeText(array.toString())
-            temp.delete()
+        return array
+    }
+
+    fun decode(array: JSONArray): List<Note> = buildList {
+        for (i in 0 until array.length()) {
+            val item = array.optJSONObject(i) ?: continue
+            val body = item.optString("body")
+            add(
+                Note(
+                    id = item.optString("id"),
+                    title = item.optString("title"),
+                    body = body,
+                    createdAt = item.optLong("createdAt", item.optLong("updatedAt")),
+                    updatedAt = item.optLong("updatedAt"),
+                    spans = decodeSpans(item.optJSONArray("spans"), body.length),
+                    folderId = item.optString("folderId")
+                )
+            )
         }
+    }
+
+    private fun decodeSpans(array: JSONArray?, length: Int): List<NoteSpan> {
+        if (array == null) return emptyList()
+        return buildList {
+            for (i in 0 until array.length()) {
+                val item = array.optJSONObject(i) ?: continue
+                val type = item.optString("type")
+                if (type !in NoteSpan.TYPES) continue
+                val start = item.optInt("start").coerceIn(0, length)
+                val end = item.optInt("end").coerceIn(0, length)
+                if (start < end) add(NoteSpan(type, start, end))
+            }
+        }.distinct().sortedWith(compareBy({ it.start }, { it.end }, { it.type }))
     }
 }
