@@ -34,20 +34,15 @@ jobs:
             tail -80 app/build/reports/lint-results-debug.txt
           fi
 
-      - name: Build debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
-
-      - name: Build release APK for size check
+      - name: Build release APK
         run: gradle assembleRelease --no-daemon --stacktrace
 
-      - name: Report APK sizes
-        run: |
-          ls -l app/build/outputs/apk/debug/app-debug.apk
-          ls -l app/build/outputs/apk/release/app-release-unsigned.apk
+      - name: Report APK size
+        run: ls -l app/build/outputs/apk/release/app-release-unsigned.apk
 
-      - name: Upload APK
+      - name: Upload release APK
         uses: actions/upload-artifact@v7
         with:
-          name: bare-notes-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: bare-notes-release-unsigned
+          path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
