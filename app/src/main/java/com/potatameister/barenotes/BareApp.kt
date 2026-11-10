@@ -14,9 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
@@ -110,8 +107,7 @@ fun BareApp(viewModel: NotesViewModel) {
                                 viewModel.prepareNewNote()
                                 push("editor:new")
                             },
-                            onOpenNote = { note -> push("editor:${note.id}") },
-                            onOpenFolders = { push("folders") }
+                            onOpenNote = { note -> push("editor:${note.id}") }
                         )
                         route == "folders" -> FoldersScreen(
                             viewModel = viewModel,
@@ -163,8 +159,7 @@ private fun BareDrawer(
     ModalDrawerSheet(
         modifier = Modifier
             .width(280.dp)
-            .fillMaxHeight()
-            .windowInsetsPadding(WindowInsets.systemBars),
+            .fillMaxHeight(),
         drawerShape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
         drawerContainerColor = colors.surface,
         drawerTonalElevation = 0.dp

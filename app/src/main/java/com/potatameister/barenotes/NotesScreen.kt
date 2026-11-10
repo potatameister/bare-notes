@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,8 +38,7 @@ fun NotesScreen(
     viewModel: NotesViewModel,
     onMenu: () -> Unit,
     onAdd: () -> Unit,
-    onOpenNote: (Note) -> Unit,
-    onOpenFolders: () -> Unit
+    onOpenNote: (Note) -> Unit
 ) {
     val colors = LocalBareColors.current
     val context = LocalContext.current
@@ -196,23 +194,20 @@ private fun NoteRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 4.dp)
         )
-        Row(modifier = Modifier.padding(top = 8.dp)) {
-            Text(
-                text = dateLabel,
-                style = BareType.Meta,
-                color = colors.textMuted,
-                maxLines = 1
-            )
-            if (!folderLabel.isNullOrBlank()) {
-                Text(
-                    text = " · $folderLabel",
-                    style = BareType.Meta,
-                    color = colors.textMuted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
+        Text(
+            text = buildString {
+                append(dateLabel)
+                if (!folderLabel.isNullOrBlank()) {
+                    append(" · ")
+                    append(folderLabel)
+                }
+            },
+            style = BareType.Meta,
+            color = colors.textMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 8.dp)
+        )
         Spacer(modifier = Modifier.height(16.dp))
         BareDivider()
     }

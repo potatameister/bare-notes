@@ -46,11 +46,12 @@ fun SettingsScreen(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri != null) {
+            val json = viewModel.exportJson()
             scope.launch {
                 val ok = withContext(Dispatchers.IO) {
                     runCatching {
                         context.contentResolver.openOutputStream(uri)?.use {
-                            it.write(viewModel.exportJson().toByteArray())
+                            it.write(json.toByteArray())
                         } ?: error("No stream")
                     }.isSuccess
                 }
