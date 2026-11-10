@@ -95,7 +95,7 @@ fun EditorScreen(
         var folderId by rememberSaveable(id) {
             mutableStateOf(existing?.folderId ?: viewModel.newNoteFolderId)
         }
-        val body = rememberSaveable(id, saver = TextFieldState.Saver) {
+        val body = rememberSaveable(id, saver = RichTextStateSaver) {
             createRichTextState(
                 existing?.body.orEmpty(),
                 existing?.spans.orEmpty()

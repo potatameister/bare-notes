@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.insert
 import androidx.compose.foundation.text.input.placeCursorAtEnd
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontStyle
@@ -84,6 +85,46 @@ fun createRichTextState(text: String, spans: List<NoteSpan>): TextFieldState =
             }
         }
     }
+
+val RichTextStateSaver = listSaver<TextFieldState, Any>(
+    save = { state ->
+        buildList {
+            add(state.text.toString())
+            add(state.selection.start)
+            add(state.selection.end)
+            serializeSpans(state).forEach { span ->
+                add("${span.type}:${span.start}:${span.end}")
+            }
+        }
+    },
+    restore = { saved ->
+        val text = saved.getOrNull(0) as? String ?: return@listSaver null
+        val start = saved.getOrNull(1) as? Int ?: 0
+        val end = saved.getOrNull(2) as? Int ?: 0
+        val spans = saved.drop(3).mapNotNull { entry ->
+            val parts = (entry as? String)?.split(':') ?: return@mapNotNull null
+            if (parts.size != 3) return@mapNotNull null
+            val spanStart = parts[1].toIntOrNull() ?: return@mapNotNull null
+            val spanEnd = parts[2].toIntOrNull() ?: return@mapNotNull null
+            if (parts[0] !in NoteSpan.TYPES || spanStart >= spanEnd) {
+                null
+            } else {
+                NoteSpan(parts[0], spanStart, spanEnd)
+            }
+        }
+        createRichTextState(text, spans).also { state ->
+            state.edit {
+                if (this.length > 0) {
+                    when {
+                        start <= 0 -> placeCursorBeforeCharAt(0)
+                        start >= this.length -> placeCursorAtEnd()
+                        else -> placeCursorAfterCharAt(start - 1)
+                    }
+                }
+            }
+        }
+    }
+)
 
 fun serializeSpans(state: TextFieldState): List<NoteSpan> =
     state.textStyles.getSpanStyles(TextRange(0, state.text.length))
