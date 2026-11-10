@@ -64,7 +64,7 @@ fun EditorScreen(
     viewModel: NotesViewModel,
     noteId: String?,
     onClose: () -> Unit,
-    onOpenFolders: () -> Unit
+    onOpenFolders: (String?) -> Unit
 ) {
     val colors = LocalBareColors.current
     val context = LocalContext.current
@@ -111,12 +111,12 @@ fun EditorScreen(
         val titleFocus = remember { FocusRequester() }
         val bodyFocus = remember { FocusRequester() }
 
-        fun save() {
-            if (deleted) return
+        fun save(): Boolean {
+            if (deleted) return false
             val text = body.text.toString()
             val cleanTitle = title.trim()
             val current = viewModel.noteById(id)
-            if (!saved && cleanTitle.isEmpty() && text.isBlank()) return
+            if (!saved && cleanTitle.isEmpty() && text.isBlank()) return false
             val spans = serializeSpans(body)
             if (current != null &&
                 current.title == cleanTitle &&
@@ -125,7 +125,7 @@ fun EditorScreen(
                 current.folderId == folderId
             ) {
                 saved = true
-                return
+                return true
             }
             viewModel.saveNote(
                 Note(
@@ -139,6 +139,7 @@ fun EditorScreen(
                 )
             )
             saved = true
+            return true
         }
 
         fun close() {
@@ -178,6 +179,12 @@ fun EditorScreen(
         LaunchedEffect(title, body.text, folderId) {
             delay(1500)
             save()
+        }
+
+        LaunchedEffect(viewModel.folders) {
+            if (folderId.isNotEmpty() && viewModel.folders.none { it.id == folderId }) {
+                folderId = ""
+            }
         }
 
         val current = viewModel.noteById(id)
@@ -509,8 +516,8 @@ fun EditorScreen(
                         label = "Manage folders…",
                         onClick = {
                             showFolderPicker = false
-                            save()
-                            onOpenFolders()
+                            val hasNote = save()
+                            onOpenFolders(if (hasNote) id else null)
                         }
                     )
                 }

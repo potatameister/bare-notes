@@ -73,6 +73,8 @@ object NoteStore {
             )
         }
     }
+        .filter { it.id.isNotBlank() }
+        .distinctBy { it.id }
 
     private fun decodeSpans(array: JSONArray?, length: Int): List<NoteSpan> {
         if (array == null) return emptyList()

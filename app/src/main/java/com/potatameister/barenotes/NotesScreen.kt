@@ -117,7 +117,8 @@ fun NotesScreen(
                     BareIconButton(
                         iconRes = R.drawable.ic_plus,
                         contentDescription = "New note",
-                        onClick = onAdd
+                        onClick = onAdd,
+                        enabled = viewModel.loaded
                     )
                 }
             }

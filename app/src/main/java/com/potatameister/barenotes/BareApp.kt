@@ -124,7 +124,19 @@ fun BareApp(viewModel: NotesViewModel) {
                             viewModel = viewModel,
                             noteId = route.removePrefix("editor:").takeUnless { it == "new" },
                             onClose = { pop() },
-                            onOpenFolders = { push("folders") }
+                            onOpenFolders = { editorId ->
+                                val parent = routeKey.substringBeforeLast('|', "")
+                                val editorPart = if (editorId != null) {
+                                    "editor:$editorId"
+                                } else {
+                                    routeKey.substringAfterLast('|')
+                                }
+                                routeKey = buildList {
+                                    if (parent.isNotEmpty()) add(parent)
+                                    add(editorPart)
+                                    add("folders")
+                                }.joinToString("|")
+                            }
                         )
                     }
                     SnackbarHost(
