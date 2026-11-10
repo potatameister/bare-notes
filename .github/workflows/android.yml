@@ -24,6 +24,16 @@ jobs:
         with:
           gradle-version: '9.6.0'
 
+      - name: Lint
+        run: gradle lintDebug --no-daemon
+
+      - name: Show lint summary
+        if: always()
+        run: |
+          if [ -f app/build/reports/lint-results-debug.txt ]; then
+            tail -80 app/build/reports/lint-results-debug.txt
+          fi
+
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon --stacktrace
 
