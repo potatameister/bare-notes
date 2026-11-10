@@ -175,6 +175,11 @@ fun EditorScreen(
             }
         }
 
+        LaunchedEffect(title, body.text, folderId) {
+            delay(1500)
+            save()
+        }
+
         val current = viewModel.noteById(id)
         val folderLabel = viewModel.folderName(folderId) ?: "Unfiled"
         val listInput = remember { listContinuationTransformation() }
@@ -419,7 +424,7 @@ fun EditorScreen(
                     }
                 )
                 BareFormatButton(
-                    label = "☑",
+                    label = "☑\uFE0E",
                     description = "Checklist",
                     active = isPrefixActive(body, PrefixKind.CHECK),
                     onClick = {
@@ -428,7 +433,7 @@ fun EditorScreen(
                     }
                 )
                 BareFormatButton(
-                    label = "❝",
+                    label = "❝\uFE0E",
                     description = "Quote",
                     active = isPrefixActive(body, PrefixKind.QUOTE),
                     onClick = {

@@ -35,7 +35,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -82,7 +81,7 @@ fun BareApp(viewModel: NotesViewModel) {
             ModalNavigationDrawer(
                 drawerState = drawerState,
                 gesturesEnabled = route == "notes",
-                scrimColor = Color.Black.copy(alpha = 0.32f),
+                scrimColor = colors.iconBg.copy(alpha = 0.32f),
                 drawerContent = {
                     BareDrawer(
                         viewModel = viewModel,
@@ -133,7 +132,14 @@ fun BareApp(viewModel: NotesViewModel) {
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .navigationBarsPadding()
-                    )
+                    ) { data ->
+                        androidx.compose.material3.Snackbar(
+                            snackbarData = data,
+                            containerColor = colors.text,
+                            contentColor = colors.bg,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
+                        )
+                    }
                 }
             }
         }
