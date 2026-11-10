@@ -2,6 +2,7 @@ package com.potatameister.barenotes
 
 import android.content.Context
 import android.content.res.Configuration
+import androidx.core.content.edit
 
 enum class ThemeMode {
     SYSTEM,
@@ -22,8 +23,8 @@ object ThemePrefs {
         }
 
     fun save(context: Context, mode: ThemeMode) {
-        prefs(context).edit()
-            .putString(
+        prefs(context).edit {
+            putString(
                 KEY,
                 when (mode) {
                     ThemeMode.SYSTEM -> "system"
@@ -31,7 +32,7 @@ object ThemePrefs {
                     ThemeMode.DARK -> "dark"
                 }
             )
-            .apply()
+        }
     }
 
     fun resolveDark(context: Context): Boolean = when (mode(context)) {

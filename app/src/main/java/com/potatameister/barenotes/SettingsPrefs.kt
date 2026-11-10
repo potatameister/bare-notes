@@ -1,6 +1,7 @@
 package com.potatameister.barenotes
 
 import android.content.Context
+import androidx.core.content.edit
 
 object SettingsPrefs {
 
@@ -15,14 +16,14 @@ object SettingsPrefs {
         prefs(context).getInt(KEY_TEXT_SIZE, 16).coerceIn(14, 20)
 
     fun setTextSizeSp(context: Context, sp: Int) {
-        prefs(context).edit().putInt(KEY_TEXT_SIZE, sp.coerceIn(14, 20)).apply()
+        prefs(context).edit { putInt(KEY_TEXT_SIZE, sp.coerceIn(14, 20)) }
     }
 
     fun sortOrder(context: Context): String =
         prefs(context).getString(KEY_SORT, SORT_MODIFIED) ?: SORT_MODIFIED
 
     fun setSortOrder(context: Context, order: String) {
-        prefs(context).edit().putString(KEY_SORT, order).apply()
+        prefs(context).edit { putString(KEY_SORT, order) }
     }
 
     private fun prefs(context: Context) =

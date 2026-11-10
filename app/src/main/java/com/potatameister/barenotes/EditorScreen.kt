@@ -251,7 +251,7 @@ fun EditorScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 2.dp),
+                        .padding(bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val characters = counts.first

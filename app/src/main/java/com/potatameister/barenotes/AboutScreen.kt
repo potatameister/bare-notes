@@ -57,7 +57,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 .fillMaxWidth()
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 32.dp)
+                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 24.dp)
         ) {
             Text(
                 text = stringResource(R.string.bare),
@@ -68,14 +68,14 @@ fun AboutScreen(onBack: () -> Unit) {
                 text = stringResource(R.string.notes),
                 style = BareType.Eyebrow,
                 color = colors.textMuted,
-                modifier = Modifier.padding(top = 2.dp)
+                modifier = Modifier.padding(top = 4.dp)
             )
 
             Text(
                 text = stringResource(R.string.about_intro),
                 style = BareType.ScreenTitle,
                 color = colors.text,
-                modifier = Modifier.padding(top = 28.dp)
+                modifier = Modifier.padding(top = 24.dp)
             )
             Text(
                 text = stringResource(R.string.about_body),

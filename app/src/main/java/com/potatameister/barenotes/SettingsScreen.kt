@@ -100,7 +100,7 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 32.dp)
+                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 24.dp)
         ) {
             Text(
                 text = "NOTES",
@@ -165,7 +165,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Settings and backups stay on this device.",
+                text = "Settings stay on this device. Backups go wherever you save them.",
                 style = BareType.Meta,
                 color = colors.textMuted
             )

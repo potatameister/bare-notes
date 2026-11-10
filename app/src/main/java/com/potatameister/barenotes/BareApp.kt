@@ -145,12 +145,19 @@ fun BareApp(viewModel: NotesViewModel) {
                             .align(Alignment.BottomCenter)
                             .navigationBarsPadding()
                     ) { data ->
-                        androidx.compose.material3.Snackbar(
-                            snackbarData = data,
-                            containerColor = colors.text,
-                            contentColor = colors.bg,
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(colors.text)
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = data.visuals.message,
+                                style = BareType.Body,
+                                color = colors.bg
+                            )
+                        }
                     }
                 }
             }
@@ -196,7 +203,7 @@ private fun BareDrawer(
                 text = "NOTES",
                 style = BareType.Eyebrow,
                 color = colors.textMuted,
-                modifier = Modifier.padding(top = 2.dp)
+                modifier = Modifier.padding(top = 4.dp)
             )
             BareDivider(
                 modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
@@ -228,7 +235,7 @@ private fun BareDrawer(
                     text = "FOLDERS",
                     style = BareType.Eyebrow,
                     color = colors.textMuted,
-                    modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)
+                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                 )
                 viewModel.folders.forEach { folder ->
                     BareNavRow(
