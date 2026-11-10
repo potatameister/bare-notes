@@ -196,7 +196,7 @@ fun SettingsScreen(
             selected = viewModel.sortOrder,
             onDismiss = { dialog = null },
             onSelect = {
-                viewModel.setSortOrder(it)
+                viewModel.updateSortOrder(it)
                 dialog = null
             }
         )
@@ -210,7 +210,7 @@ fun SettingsScreen(
             selected = viewModel.themeMode,
             onDismiss = { dialog = null },
             onSelect = {
-                viewModel.setThemeMode(it)
+                viewModel.updateThemeMode(it)
                 dialog = null
             }
         )

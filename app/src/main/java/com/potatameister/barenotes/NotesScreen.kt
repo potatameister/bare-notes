@@ -74,7 +74,7 @@ fun NotesScreen(
                         contentDescription = "Close search",
                         onClick = {
                             searchOpen = false
-                            viewModel.setSearchQuery("")
+                            viewModel.updateSearchQuery("")
                             keyboard?.hide()
                         }
                     )
@@ -90,7 +90,7 @@ fun NotesScreen(
                 if (searchOpen) {
                     BareInput(
                         value = viewModel.searchQuery,
-                        onValueChange = viewModel::setSearchQuery,
+                        onValueChange = viewModel::updateSearchQuery,
                         hint = "Search notes",
                         style = BareType.Body,
                         singleLine = true,

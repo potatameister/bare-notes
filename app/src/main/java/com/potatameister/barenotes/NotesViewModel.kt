@@ -97,11 +97,11 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     fun folderName(id: String): String? = folders.firstOrNull { it.id == id }?.name
 
-    fun setFilter(value: NoteFilter) {
+    fun updateFilter(value: NoteFilter) {
         filter = value
     }
 
-    fun setSearchQuery(value: String) {
+    fun updateSearchQuery(value: String) {
         searchQuery = value
     }
 
@@ -202,12 +202,12 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         textSizeSp = value
     }
 
-    fun setSortOrder(order: String) {
+    fun updateSortOrder(order: String) {
         SettingsPrefs.setSortOrder(getApplication(), order)
         sortOrder = order
     }
 
-    fun setThemeMode(mode: ThemeMode) {
+    fun updateThemeMode(mode: ThemeMode) {
         ThemePrefs.save(getApplication(), mode)
         themeMode = mode
     }

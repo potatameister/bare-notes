@@ -198,7 +198,7 @@ private fun BareDrawer(
                     label = "All notes",
                     selected = viewModel.filter == NoteFilter.All,
                     onClick = {
-                        viewModel.setFilter(NoteFilter.All)
+                        viewModel.updateFilter(NoteFilter.All)
                         close()
                     }
                 )
@@ -206,7 +206,7 @@ private fun BareDrawer(
                     label = "Unfiled",
                     selected = viewModel.filter == NoteFilter.Unfiled,
                     onClick = {
-                        viewModel.setFilter(NoteFilter.Unfiled)
+                        viewModel.updateFilter(NoteFilter.Unfiled)
                         close()
                     }
                 )
@@ -222,7 +222,7 @@ private fun BareDrawer(
                         label = folder.name,
                         selected = viewModel.filter == NoteFilter.InFolder(folder.id),
                         onClick = {
-                            viewModel.setFilter(NoteFilter.InFolder(folder.id))
+                            viewModel.updateFilter(NoteFilter.InFolder(folder.id))
                             close()
                         }
                     )
@@ -254,7 +254,7 @@ private fun BareDrawer(
                     Switch(
                         checked = dark,
                         onCheckedChange = {
-                            viewModel.setThemeMode(if (it) ThemeMode.DARK else ThemeMode.LIGHT)
+                            viewModel.updateThemeMode(if (it) ThemeMode.DARK else ThemeMode.LIGHT)
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = colors.text,
