@@ -88,16 +88,21 @@ fun createRichTextState(text: String, spans: List<NoteSpan>): TextFieldState =
 
 val RichTextStateSaver = listSaver<TextFieldState, Any>(
     save = { state ->
-        buildList {
-            add(state.text.toString())
-            add(state.selection.start)
-            add(state.selection.end)
-            serializeSpans(state).forEach { span ->
-                add("${span.type}:${span.start}:${span.end}")
+        if (state.text.length > 100_000) {
+            emptyList()
+        } else {
+            buildList {
+                add(state.text.toString())
+                add(state.selection.start)
+                add(state.selection.end)
+                serializeSpans(state).forEach { span ->
+                    add("${span.type}:${span.start}:${span.end}")
+                }
             }
         }
     },
     restore = { saved ->
+        if (saved.isEmpty()) return@listSaver null
         val text = saved.getOrNull(0) as? String ?: return@listSaver null
         val start = saved.getOrNull(1) as? Int ?: 0
         val end = saved.getOrNull(2) as? Int ?: 0

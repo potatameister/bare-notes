@@ -6,6 +6,7 @@ A tiny, fast, offline notes app for Android.
 - No ads
 - No tracking
 - No internet permission
+- No cloud backup; export manually
 - Notes stored locally as JSON
 - One-level folders
 - Search
