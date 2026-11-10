@@ -7,9 +7,12 @@ A tiny, fast, offline notes app for Android.
 - No tracking
 - No internet permission
 - Notes stored locally as JSON
-- Folders
-- Dark mode, editor text size, sort by modified/created
+- One-level folders
+- Search
+- System, light, and dark themes
+- Editor text size, sort by modified/created
 - Bold, italic, underline, strike, headings, bullets, numbers, checklists, quotes
+- JSON backup export and import
 
 ## Status
 
@@ -31,8 +34,18 @@ The APK is built in GitHub Actions with Gradle. No local Android SDK is required
 - Android Gradle Plugin 9.4.1
 - Gradle 9.6.0
 - Built-in Kotlin
+- Compose BOM 2026.09.00
 - compileSdk / targetSdk 37
 - minSdk 26
+
+## Data
+
+Notes and folders are stored in the app's private files directory. Use
+**Settings → Export backup** to write a JSON backup somewhere you choose.
+**Import backup** replaces the current data.
+
+Uninstalling the app removes all notes and folders unless you exported a backup
+first.
 
 ## License
 
