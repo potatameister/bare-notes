@@ -318,11 +318,11 @@ fun EditorScreen(
                             },
                         textStyle = bodyStyle,
                         keyboardOptions = KeyboardOptions.Default,
-                        lineLimits = TextFieldLineLimits.MultiLine,
+                        lineLimits = TextFieldLineLimits.MultiLine(),
                         inputTransformation = listInput,
-                        onTextLayout = { textLayout = it },
+                        onTextLayout = { getResult -> textLayout = getResult() },
                         cursorBrush = SolidColor(colors.text),
-                        decorationBox = { inner ->
+                        decorator = androidx.compose.foundation.text.input.TextFieldDecorator { inner ->
                             Box {
                                 if (body.text.isEmpty()) {
                                     Text(

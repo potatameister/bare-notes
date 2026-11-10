@@ -165,7 +165,7 @@ private fun BareDrawer(
             .width(280.dp)
             .fillMaxHeight()
             .windowInsetsPadding(WindowInsets.systemBars),
-        drawerShape = androidx.compose.foundation.shape.RectangleShape,
+        drawerShape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
         drawerContainerColor = colors.surface,
         drawerTonalElevation = 0.dp
     ) {
