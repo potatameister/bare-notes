@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
@@ -28,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +60,12 @@ fun BareApp(viewModel: NotesViewModel) {
 
         val messenger: (String) -> Unit = { message ->
             scope.launch { snackbar.showSnackbar(message) }
+        }
+
+        LaunchedEffect(viewModel.storageError) {
+            val message = viewModel.storageError ?: return@LaunchedEffect
+            viewModel.clearStorageError()
+            snackbar.showSnackbar(message)
         }
 
         fun push(next: String) {
@@ -149,18 +157,25 @@ fun BareApp(viewModel: NotesViewModel) {
                             .align(Alignment.BottomCenter)
                             .navigationBarsPadding()
                     ) { data ->
-                        Row(
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(colors.text)
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(horizontal = 20.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = data.visuals.message,
-                                style = BareType.Body,
-                                color = colors.bg
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .widthIn(max = 340.dp)
+                                    .background(colors.text)
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = data.visuals.message,
+                                    style = BareType.Body,
+                                    color = colors.bg
+                                )
+                            }
                         }
                     }
                 }

@@ -180,7 +180,6 @@ fun EditorScreen(
             toggleCheckAt(body, start, end)
             dirty = true
             revision++
-            save()
         }
 
         fun finishEditing() {
@@ -693,12 +692,15 @@ private fun NoteBodyField(
                     )
                     val line = checkboxPrefixAt(state, offset)
                     if (line != null) {
-                        val box = layout.getBoundingBox(line.first)
-                        val left = box.left
-                        if (down.position.x >= left - 4.dp.toPx() &&
-                            down.position.x <= left + 30.dp.toPx()
-                        ) {
-                            onToggleCheck(line.first, line.second)
+                        val lineIndex = layout.getLineForOffset(line.first)
+                        val left = layout.getLineLeft(lineIndex)
+                        val contentY = down.position.y + scrollState.value
+                        val inBox = down.position.x >= left - 4.dp.toPx() &&
+                            down.position.x <= left + 30.dp.toPx() &&
+                            contentY >= layout.getLineTop(lineIndex) - 4.dp.toPx() &&
+                            contentY <= layout.getLineBottom(lineIndex) + 4.dp.toPx()
+                        if (inBox) {
+                            runCatching { onToggleCheck(line.first, line.second) }
                             down.consume()
                             return@awaitEachGesture
                         }
@@ -754,10 +756,10 @@ private fun DrawScope.drawCheckboxes(
 
             val lineTop = layout.getLineTop(line) - scrollOffset
             val lineHeight = layout.getLineBottom(line) - layout.getLineTop(line)
-            val boxSize = minOf(20.dp.toPx(), lineHeight - 2.dp.toPx())
-                .coerceAtLeast(12.dp.toPx())
+            val boxSize = minOf(18.dp.toPx(), lineHeight - 3.dp.toPx())
+                .coerceAtLeast(13.dp.toPx())
             val top = lineTop + (lineHeight - boxSize) / 2f
-            val left = layout.getBoundingBox(start).left
+            val left = layout.getLineLeft(line) + 1.dp.toPx()
 
             if (checked) {
                 drawRect(
@@ -766,25 +768,25 @@ private fun DrawScope.drawCheckboxes(
                     size = Size(boxSize, boxSize)
                 )
                 val check = Path().apply {
-                    moveTo(left + boxSize * 0.20f, top + boxSize * 0.55f)
-                    lineTo(left + boxSize * 0.42f, top + boxSize * 0.76f)
-                    lineTo(left + boxSize * 0.82f, top + boxSize * 0.28f)
+                    moveTo(left + boxSize * 0.22f, top + boxSize * 0.54f)
+                    lineTo(left + boxSize * 0.43f, top + boxSize * 0.73f)
+                    lineTo(left + boxSize * 0.80f, top + boxSize * 0.31f)
                 }
                 drawPath(
                     path = check,
                     color = colors.bg,
                     style = Stroke(
-                        width = 2.4.dp.toPx(),
+                        width = 1.9.dp.toPx(),
                         cap = StrokeCap.Round,
                         join = StrokeJoin.Round
                     )
                 )
             } else {
                 drawRect(
-                    color = colors.text,
+                    color = colors.textMuted,
                     topLeft = Offset(left, top),
                     size = Size(boxSize, boxSize),
-                    style = Stroke(1.8.dp.toPx())
+                    style = Stroke(1.35.dp.toPx())
                 )
             }
         }

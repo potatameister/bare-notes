@@ -47,6 +47,9 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     var newNoteFolderId by mutableStateOf("")
         private set
 
+    var storageError by mutableStateOf<String?>(null)
+        private set
+
     private val mutex = Mutex()
 
     init {
@@ -56,11 +59,17 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     fun load() {
         viewModelScope.launch {
             mutex.withLock {
-                val (loadedNotes, loadedFolders) = withContext(Dispatchers.IO) {
-                    NoteStore.load(getApplication()) to FolderStore.load(getApplication())
+                val loadedData = withContext(Dispatchers.IO) {
+                    runCatching {
+                        NoteStore.load(getApplication()) to FolderStore.load(getApplication())
+                    }
                 }
-                notes = loadedNotes
-                folders = loadedFolders
+                loadedData.onSuccess { (loadedNotes, loadedFolders) ->
+                    notes = loadedNotes
+                    folders = loadedFolders
+                }.onFailure {
+                    storageError = "Could not load notes."
+                }
                 loaded = true
             }
         }
@@ -123,9 +132,10 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             mutex.withLock {
                 val next = notes.filterNot { it.id == note.id } + note
                 notes = next
-                withContext(Dispatchers.IO) {
-                    NoteStore.save(getApplication(), next)
+                val saved = withContext(Dispatchers.IO) {
+                    runCatching { NoteStore.save(getApplication(), next) }.isSuccess
                 }
+                if (!saved) storageError = "Could not save note."
             }
         }
     }
@@ -135,11 +145,16 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             mutex.withLock {
                 val next = notes.filterNot { it.id == id }
                 notes = next
-                withContext(Dispatchers.IO) {
-                    NoteStore.save(getApplication(), next)
+                val saved = withContext(Dispatchers.IO) {
+                    runCatching { NoteStore.save(getApplication(), next) }.isSuccess
                 }
+                if (!saved) storageError = "Could not save notes."
             }
         }
+    }
+
+    fun clearStorageError() {
+        storageError = null
     }
 
     fun createFolder(name: String): Folder? {

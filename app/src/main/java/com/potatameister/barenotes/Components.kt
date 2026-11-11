@@ -1,6 +1,7 @@
 package com.potatameister.barenotes
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,26 +10,25 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
@@ -56,6 +56,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 val LocalMessenger = compositionLocalOf<(String) -> Unit> { {} }
 
@@ -363,6 +365,7 @@ fun BareNameDialog(
     var error by remember { mutableStateOf<String?>(null) }
     val focus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
+    val colors = LocalBareColors.current
 
     LaunchedEffect(Unit) {
         focus.requestFocus()
@@ -385,30 +388,65 @@ fun BareNameDialog(
         confirmText = confirmText,
         onConfirm = ::submit,
         content = {
-            BareInput(
-                value = name,
-                onValueChange = {
-                    name = it
-                    error = null
-                },
-                hint = hint,
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focus),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
-            )
-            BareDivider(modifier = Modifier.padding(top = 8.dp))
-            if (error != null) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = error.orEmpty(),
-                    style = BareType.Preview,
-                    color = LocalBareColors.current.text
+                    text = "NAME",
+                    style = BareType.Eyebrow,
+                    color = colors.textMuted
                 )
+                BareInput(
+                    value = name,
+                    onValueChange = {
+                        name = it
+                        error = null
+                    },
+                    hint = hint,
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focus)
+                        .padding(vertical = 8.dp),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { submit() })
+                )
+                BareDivider()
+                if (error != null) {
+                    Text(
+                        text = error.orEmpty(),
+                        style = BareType.Meta,
+                        color = colors.text
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(4.dp))
         }
     )
+}
+
+@Composable
+private fun DialogAction(
+    text: String,
+    enabled: Boolean = true,
+    muted: Boolean = false,
+    onClick: () -> Unit
+) {
+    val colors = LocalBareColors.current
+    Box(
+        modifier = Modifier
+            .heightIn(min = 44.dp)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            style = BareType.Body,
+            color = when {
+                !enabled -> colors.textMuted
+                muted -> colors.textMuted
+                else -> colors.text
+            }
+        )
+    }
 }
 
 @Composable
@@ -422,50 +460,59 @@ fun BareDialog(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val colors = LocalBareColors.current
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismissRequest,
-        title = {
-            Text(
-                text = title,
-                style = BareType.ScreenTitle,
-                color = colors.text
-            )
-        },
-        text = {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 24.dp)
+                .imePadding(),
+            contentAlignment = Alignment.Center
+        ) {
             Column(
                 modifier = Modifier
-                    .heightIn(max = 420.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                content = content
-            )
-        },
-        confirmButton = {
-            if (confirmText != null && onConfirm != null) {
-                TextButton(
-                    onClick = onConfirm,
-                    enabled = confirmEnabled,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = colors.text,
-                        disabledContentColor = colors.textMuted
-                    )
+                    .widthIn(max = 320.dp)
+                    .fillMaxWidth()
+                    .heightIn(max = 520.dp)
+                    .background(colors.bg)
+                    .border(1.dp, colors.divider)
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = BareType.ScreenTitle,
+                    color = colors.text
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    content = content
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                BareDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(confirmText, style = BareType.Body)
+                    DialogAction(
+                        text = dismissText,
+                        muted = true,
+                        onClick = onDismissRequest
+                    )
+                    if (confirmText != null && onConfirm != null) {
+                        DialogAction(
+                            text = confirmText,
+                            enabled = confirmEnabled,
+                            onClick = onConfirm
+                        )
+                    }
                 }
             }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismissRequest,
-                colors = ButtonDefaults.textButtonColors(contentColor = colors.textMuted)
-            ) {
-                Text(dismissText, style = BareType.Body)
-            }
-        },
-        shape = RoundedCornerShape(0.dp),
-        containerColor = colors.bg,
-        titleContentColor = colors.text,
-        textContentColor = colors.textMuted,
-        tonalElevation = 0.dp
-    )
+        }
+    }
 }

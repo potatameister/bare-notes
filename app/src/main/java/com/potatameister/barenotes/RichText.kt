@@ -299,13 +299,16 @@ fun clearFormatting(state: TextFieldState) {
 }
 
 fun toggleCheckAt(state: TextFieldState, lineStart: Int, lineEnd: Int) {
-    val line = state.text.substring(lineStart, lineEnd)
+    val text = state.text
+    if (lineStart < 0 || lineEnd > text.length || lineStart >= lineEnd) return
+    val line = text.substring(lineStart, lineEnd)
     val replacement = when {
         line.startsWith(CHECK_OPEN) -> CHECK_DONE
         line.startsWith(CHECK_DONE) -> CHECK_OPEN
         else -> return
     }
     val oldLength = if (line.startsWith(CHECK_OPEN)) CHECK_OPEN.length else CHECK_DONE.length
+    if (lineStart + oldLength > lineEnd) return
     state.edit {
         replace(lineStart, lineStart + oldLength, replacement)
     }
