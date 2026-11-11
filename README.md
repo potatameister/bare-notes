@@ -7,14 +7,14 @@ A tiny, fast, offline notes app for Android.
 - No tracking
 - No internet permission
 - No cloud backup; export manually
-- Notes stored locally as JSON
+- Notes stored locally as Markdown (`.md`)
 - One-level folders with note counts and quick move
 - Autosave with saved/unsaved status
 - Search
 - System, light, and dark themes
 - Editor text size, sort by modified/created
 - Bold, italic, strike, headings, bullets, numbers, checklists, quotes
-- JSON backup export and import
+- Markdown backup export and import (`.zip`)
 
 ## Status
 
@@ -42,9 +42,10 @@ The APK is built in GitHub Actions with Gradle. No local Android SDK is required
 
 ## Data
 
-Notes and folders are stored in the app's private files directory. Use
-**Settings → Export backup** to write a JSON backup somewhere you choose.
-**Import backup** replaces the current data.
+Notes are stored in the app's private files directory as Markdown `.md`
+files. Folder metadata is stored as JSON. Use **Settings → Export Markdown**
+to write a `.zip` of the Markdown files somewhere you choose.
+**Import Markdown** replaces the current data.
 
 Uninstalling the app removes all notes and folders unless you exported a backup
 first.

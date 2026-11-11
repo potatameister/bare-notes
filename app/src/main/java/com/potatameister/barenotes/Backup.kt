@@ -30,7 +30,8 @@ object Backup {
             zip.closeEntry()
 
             notes.forEach { note ->
-                val id = note.id.ifBlank { return@forEach }
+                if (!MarkdownCodec.isSafeId(note.id)) return@forEach
+                val id = note.id
                 zip.putNextEntry(ZipEntry("notes/$id.md"))
                 zip.write(MarkdownCodec.encode(note).toByteArray())
                 zip.closeEntry()

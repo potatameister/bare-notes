@@ -53,7 +53,7 @@
     <string name="sort_created">Date created</string>
 
     <string name="about_intro">A tiny, offline notes app.</string>
-    <string name="about_body">No accounts. No ads. No tracking. Notes are stored on this device as JSON; no internet permission.</string>
+    <string name="about_body">No accounts. No ads. No tracking. Notes are stored on this device as Markdown; no internet permission.</string>
     <string name="version">Version</string>
     <string name="source_code">Source code</string>
     <string name="source_url">github.com/potatameister/bare-notes &#8599;</string>

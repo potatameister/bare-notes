@@ -1,7 +1,5 @@
 package com.potatameister.barenotes
 
-import org.json.JSONObject
-
 /**
  * Converts between the app's WYSIWYG body (literal list prefixes + span ranges)
  * and a small, portable Markdown subset.
@@ -15,6 +13,10 @@ object MarkdownCodec {
     private val NUMBER_PREFIX = Regex("^(\\d+)\\.\\s+")
     private val MD_CHECK_OPEN = Regex("^- \\[ \\] ")
     private val MD_CHECK_DONE = Regex("^- \\[[xX]\\] ")
+
+    private val SAFE_ID = Regex("[A-Za-z0-9_-]+")
+
+    fun isSafeId(id: String): Boolean = id.isNotBlank() && SAFE_ID.matches(id)
 
     private val INLINE_TYPES = setOf(
         NoteSpan.BOLD,
@@ -36,7 +38,7 @@ object MarkdownCodec {
     }
 
     fun decode(id: String, raw: String): Note? {
-        if (id.isBlank()) return null
+        if (!isSafeId(id)) return null
         val normalized = raw.replace("\r\n", "\n").replace('\r', '\n')
         val lines = normalized.split('\n')
         val meta = mutableMapOf<String, String>()
@@ -291,15 +293,57 @@ object MarkdownCodec {
         return if (needsEscape) "\\$text" else text
     }
 
-    private fun quote(value: String): String = JSONObject.quote(value)
+    private fun quote(value: String): String = buildString {
+        append('"')
+        value.forEach { char ->
+            when (char) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\\"")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> if (char.code < 0x20) {
+                    append("\\u")
+                    append(char.code.toString(16).padStart(4, '0'))
+                } else {
+                    append(char)
+                }
+            }
+        }
+        append('"')
+    }
 
     private fun unquote(value: String): String {
         val trimmed = value.trim()
-        if (trimmed.isEmpty()) return ""
-        return try {
-            JSONObject("{\"v\":$trimmed}").optString("v")
-        } catch (_: Exception) {
-            trimmed.trim('"')
+        if (trimmed.length < 2 || trimmed.first() != '"' || trimmed.last() != '"') {
+            return trimmed
         }
+        val out = StringBuilder()
+        var i = 1
+        while (i < trimmed.length - 1) {
+            val char = trimmed[i]
+            if (char == '\\' && i + 1 < trimmed.length - 1) {
+                when (val next = trimmed[i + 1]) {
+                    'n' -> out.append('\n')
+                    'r' -> out.append('\r')
+                    't' -> out.append('\t')
+                    '"' -> out.append('"')
+                    '\\' -> out.append('\\')
+                    'u' -> {
+                        if (i + 5 < trimmed.length) {
+                            val hex = trimmed.substring(i + 2, i + 6)
+                            hex.toIntOrNull(16)?.let { out.append(it.toChar()) }
+                            i += 4
+                        }
+                    }
+                    else -> out.append(next)
+                }
+                i += 2
+            } else {
+                out.append(char)
+                i++
+            }
+        }
+        return out.toString()
     }
 }

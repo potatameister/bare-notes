@@ -35,7 +35,7 @@ object NoteStore {
         val ids = notes.mapTo(HashSet()) { it.id }
 
         notes.forEach { note ->
-            if (note.id.isBlank()) return@forEach
+            if (!MarkdownCodec.isSafeId(note.id)) return@forEach
             writeNote(dir, note)
         }
 
@@ -79,7 +79,7 @@ object NoteStore {
         if (notes.isEmpty()) return emptyList()
 
         notes.forEach { note ->
-            if (note.id.isNotBlank()) writeNote(dir, note)
+            if (MarkdownCodec.isSafeId(note.id)) writeNote(dir, note)
         }
 
         val backup = File(context.filesDir, LEGACY_BACKUP)
