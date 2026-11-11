@@ -2,6 +2,8 @@ package com.potatameister.barenotes
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -35,13 +37,25 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -102,11 +116,13 @@ fun EditorScreen(
         var showFolderPicker by remember { mutableStateOf(false) }
         var showNewFolder by remember { mutableStateOf(false) }
         var wordCount by remember { mutableStateOf(0) }
+        var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
         var dirty by rememberSaveable(id) { mutableStateOf(false) }
         var revision by remember { mutableStateOf(0) }
         var lastBody by rememberSaveable(id) { mutableStateOf(body.text.toString()) }
         val titleFocus = remember { FocusRequester() }
         val bodyFocus = remember { FocusRequester() }
+        val bodyScroll = rememberScrollState()
 
         fun save(): Boolean {
             if (deleted) return false
@@ -202,6 +218,7 @@ fun EditorScreen(
 
         val folderLabel = viewModel.folderName(folderId) ?: "Unfiled"
         val listInput = remember { listContinuationTransformation() }
+        val checkboxTransform = remember { checkboxOutputTransformation() }
         val bodyStyle = BareType.Body.copy(
             color = colors.text,
             fontSize = viewModel.textSizeSp.sp,
@@ -318,11 +335,53 @@ fun EditorScreen(
                         state = body,
                         modifier = Modifier
                             .fillMaxSize()
-                            .focusRequester(bodyFocus),
+                            .focusRequester(bodyFocus)
+                            .drawWithContent {
+                                drawContent()
+                                textLayout?.let { layout ->
+                                    drawCheckboxes(
+                                        layout = layout,
+                                        text = body.text,
+                                        scrollOffset = bodyScroll.value,
+                                        colors = colors
+                                    )
+                                }
+                            }
+                            .pointerInput(textLayout) {
+                                awaitEachGesture {
+                                    val down = awaitFirstDown(
+                                        requireUnconsumed = false,
+                                        pass = PointerEventPass.Initial
+                                    )
+                                    val layout = textLayout ?: return@awaitEachGesture
+                                    val offset = layout.getOffsetForPosition(
+                                        Offset(
+                                            down.position.x,
+                                            down.position.y + bodyScroll.value
+                                        )
+                                    )
+                                    val line = checkboxPrefixAt(body, offset)
+                                        ?: return@awaitEachGesture
+                                    val box = layout.getBoundingBox(line.first)
+                                    val left = box.left
+                                    if (down.position.x >= left - 4.dp.toPx() &&
+                                        down.position.x <= left + 26.dp.toPx()
+                                    ) {
+                                        toggleCheckAt(body, line.first, line.second)
+                                        dirty = true
+                                        revision++
+                                        save()
+                                        down.consume()
+                                    }
+                                }
+                            },
                         textStyle = bodyStyle,
                         keyboardOptions = KeyboardOptions.Default,
                         lineLimits = TextFieldLineLimits.MultiLine(),
                         inputTransformation = listInput,
+                        outputTransformation = checkboxTransform,
+                        onTextLayout = { getResult -> textLayout = getResult() },
+                        scrollState = bodyScroll,
                         cursorBrush = SolidColor(colors.text),
                         decorator = androidx.compose.foundation.text.input.TextFieldDecorator { inner ->
                             Box {
@@ -404,6 +463,12 @@ fun EditorScreen(
                     description = "Numbered list",
                     active = isPrefixActive(body, PrefixKind.NUMBER),
                     onClick = { applyFormat { togglePrefix(body, PrefixKind.NUMBER) } }
+                )
+                BareFormatIconButton(
+                    iconRes = R.drawable.ic_checklist,
+                    description = "Checklist",
+                    active = isPrefixActive(body, PrefixKind.CHECK),
+                    onClick = { applyFormat { togglePrefix(body, PrefixKind.CHECK) } }
                 )
                 BareFormatButton(
                     label = "❝\uFE0E",
@@ -520,6 +585,54 @@ fun EditorScreen(
                     showNewFolder = false
                 }
             )
+        }
+    }
+}
+
+private fun DrawScope.drawCheckboxes(
+    layout: TextLayoutResult,
+    text: CharSequence,
+    scrollOffset: Int,
+    colors: BareColors
+) {
+    clipRect(0f, 0f, size.width, size.height) {
+        for (line in 0 until layout.lineCount) {
+            val start = layout.getLineStart(line)
+            if (start >= text.length) continue
+            val checked = text[start] == '☑'
+            if (text[start] != '☐' && !checked) continue
+
+            val lineTop = layout.getLineTop(line) - scrollOffset
+            val lineHeight = layout.getLineBottom(line) - layout.getLineTop(line)
+            val boxSize = minOf(18.dp.toPx(), lineHeight - 3.dp.toPx())
+                .coerceAtLeast(10.dp.toPx())
+            val top = lineTop + (lineHeight - boxSize) / 2f
+            val left = layout.getBoundingBox(start).left
+            val stroke = 1.5.dp.toPx()
+            val color = if (checked) colors.text else colors.textMuted
+
+            drawRect(
+                color = color,
+                topLeft = Offset(left, top),
+                size = Size(boxSize, boxSize),
+                style = Stroke(stroke)
+            )
+            if (checked) {
+                val check = Path().apply {
+                    moveTo(left + boxSize * 0.20f, top + boxSize * 0.55f)
+                    lineTo(left + boxSize * 0.42f, top + boxSize * 0.76f)
+                    lineTo(left + boxSize * 0.82f, top + boxSize * 0.28f)
+                }
+                drawPath(
+                    path = check,
+                    color = colors.text,
+                    style = Stroke(
+                        width = stroke * 1.6f,
+                        cap = StrokeCap.Round,
+                        join = StrokeJoin.Round
+                    )
+                )
+            }
         }
     }
 }

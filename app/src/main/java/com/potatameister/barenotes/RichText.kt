@@ -4,11 +4,13 @@ package com.potatameister.barenotes
 
 import androidx.compose.foundation.text.input.ExpandPolicy
 import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.insert
 import androidx.compose.foundation.text.input.placeCursorAtEnd
 import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontStyle
@@ -24,6 +26,8 @@ val H1Style = SpanStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold)
 val H2Style = SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
 private const val BULLET = "• "
+private const val CHECK_OPEN = "☐ "
+private const val CHECK_DONE = "☑ "
 private const val QUOTE = "❝ "
 private val NUMBER_PREFIX = Regex("^(\\d+)\\.\\s+")
 
@@ -249,6 +253,11 @@ fun togglePrefix(state: TextFieldState, kind: PrefixKind) {
     val newPrefix = when (kind) {
         PrefixKind.BULLET -> if (oldPrefix == BULLET) "" else BULLET
         PrefixKind.QUOTE -> if (oldPrefix == QUOTE) "" else QUOTE
+        PrefixKind.CHECK -> when (oldPrefix) {
+            CHECK_OPEN -> CHECK_DONE
+            CHECK_DONE -> ""
+            else -> CHECK_OPEN
+        }
         PrefixKind.NUMBER -> if (numberOf(oldPrefix) != null) "" else {
             "${nextNumber(text, lineStart)}. "
         }
@@ -267,11 +276,12 @@ fun isPrefixActive(state: TextFieldState, kind: PrefixKind): Boolean {
     return when (kind) {
         PrefixKind.BULLET -> prefix == BULLET
         PrefixKind.QUOTE -> prefix == QUOTE
+        PrefixKind.CHECK -> prefix == CHECK_OPEN || prefix == CHECK_DONE
         PrefixKind.NUMBER -> numberOf(prefix) != null
     }
 }
 
-enum class PrefixKind { BULLET, NUMBER, QUOTE }
+enum class PrefixKind { BULLET, NUMBER, CHECK, QUOTE }
 
 fun clearFormatting(state: TextFieldState) {
     val text = state.text
@@ -289,6 +299,42 @@ fun clearFormatting(state: TextFieldState) {
         removeStyles(block) { spanType(it) != null }
         replace(block.min, block.max, stripped)
         placeCursor(this, block.min + stripped.length)
+    }
+}
+
+fun toggleCheckAt(state: TextFieldState, lineStart: Int, lineEnd: Int) {
+    val line = state.text.substring(lineStart, lineEnd)
+    val replacement = when {
+        line.startsWith(CHECK_OPEN) -> CHECK_DONE
+        line.startsWith(CHECK_DONE) -> CHECK_OPEN
+        else -> return
+    }
+    val oldLength = if (line.startsWith(CHECK_OPEN)) CHECK_OPEN.length else CHECK_DONE.length
+    state.edit {
+        replace(lineStart, lineStart + oldLength, replacement)
+    }
+}
+
+fun checkboxPrefixAt(state: TextFieldState, offset: Int): Pair<Int, Int>? {
+    val (start, end) = fullLineBounds(state.text, offset)
+    val line = state.text.substring(start, end)
+    return if (line.startsWith(CHECK_OPEN) || line.startsWith(CHECK_DONE)) {
+        start to end
+    } else {
+        null
+    }
+}
+
+fun checkboxOutputTransformation(): OutputTransformation = OutputTransformation {
+    val buffer = asCharSequence()
+    var lineStart = 0
+    while (lineStart < length) {
+        if (buffer[lineStart] == '☐' || buffer[lineStart] == '☑') {
+            addStyle(SpanStyle(color = Color.Transparent), lineStart, lineStart + 1)
+        }
+        val newline = buffer.indexOf('\n', lineStart)
+        if (newline < 0) break
+        lineStart = newline + 1
     }
 }
 
@@ -316,6 +362,7 @@ fun listContinuationTransformation(): InputTransformation = InputTransformation 
 
     val next = when {
         prefix == BULLET -> BULLET
+        prefix == CHECK_OPEN || prefix == CHECK_DONE -> CHECK_OPEN
         prefix == QUOTE -> QUOTE
         numberOf(prefix) != null -> "${(numberOf(prefix) ?: 0) + 1}. "
         else -> return@InputTransformation
@@ -350,7 +397,7 @@ private fun fullLineBounds(text: CharSequence, cursor: Int): Pair<Int, Int> {
 }
 
 private fun splitLinePrefix(line: String): Pair<String, String> {
-    for (prefix in listOf(BULLET, QUOTE)) {
+    for (prefix in listOf(BULLET, CHECK_OPEN, CHECK_DONE, QUOTE)) {
         if (line.startsWith(prefix)) return prefix to line.substring(prefix.length)
     }
     NUMBER_PREFIX.find(line)?.let { return it.value to line.substring(it.value.length) }

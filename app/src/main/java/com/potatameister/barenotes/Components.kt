@@ -136,7 +136,6 @@ fun BareNavRow(
                 onClick = onClick,
                 role = Role.Tab
             )
-            .background(if (selected) colors.divider.copy(alpha = 0.55f) else colors.surface)
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -235,6 +234,35 @@ fun BareFormatButton(
             style = style,
             color = colors.text,
             fontSize = if (label == "H1" || label == "H2") 15.sp else 16.sp
+        )
+    }
+}
+
+@Composable
+fun BareFormatIconButton(
+    iconRes: Int,
+    description: String,
+    active: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalBareColors.current
+    Box(
+        modifier = modifier
+            .size(48.dp)
+            .background(if (active) colors.divider.copy(alpha = 0.7f) else colors.bg)
+            .selectable(
+                selected = active,
+                onClick = onClick,
+                role = Role.Button
+            )
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            tint = colors.text
         )
     }
 }

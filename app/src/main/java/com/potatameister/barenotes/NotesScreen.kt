@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -134,6 +135,21 @@ fun NotesScreen(
             }
         )
 
+        if (viewModel.loaded && visible.isNotEmpty()) {
+            val countLabel = when {
+                viewModel.searchQuery.isNotBlank() && visible.size == 1 -> "1 RESULT"
+                viewModel.searchQuery.isNotBlank() -> "${visible.size} RESULTS"
+                visible.size == 1 -> "1 NOTE"
+                else -> "${visible.size} NOTES"
+            }
+            Text(
+                text = countLabel,
+                style = BareType.Eyebrow,
+                color = colors.textMuted,
+                modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 4.dp)
+            )
+        }
+
         Box(modifier = Modifier.weight(1f)) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -190,13 +206,23 @@ private fun NoteRow(
             .clickable(onClick = onClick)
             .padding(start = 20.dp, top = 16.dp, end = 20.dp)
     ) {
-        Text(
-            text = note.title.ifBlank { "Untitled" },
-            style = BareType.ListTitle,
-            color = colors.text,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = note.title.ifBlank { "Untitled" },
+                style = BareType.ListTitle,
+                color = colors.text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = dateLabel,
+                style = BareType.Meta,
+                color = colors.textMuted,
+                maxLines = 1,
+                modifier = Modifier.padding(start = 12.dp)
+            )
+        }
         Text(
             text = previewFor(note.body).ifBlank { "No additional text" },
             style = BareType.Preview,
@@ -205,20 +231,16 @@ private fun NoteRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 4.dp)
         )
-        Text(
-            text = buildString {
-                append(dateLabel)
-                if (!folderLabel.isNullOrBlank()) {
-                    append(" · ")
-                    append(folderLabel)
-                }
-            },
-            style = BareType.Meta,
-            color = colors.textMuted,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 8.dp)
-        )
+        if (!folderLabel.isNullOrBlank()) {
+            Text(
+                text = "in $folderLabel",
+                style = BareType.Meta,
+                color = colors.textMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
         BareDivider()
     }
