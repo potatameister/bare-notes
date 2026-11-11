@@ -337,7 +337,13 @@ fun listContinuationTransformation(): InputTransformation = InputTransformation 
     if (lineStart >= cursor) return@InputTransformation
     val previousLine = buffer.subSequence(lineStart, cursor).toString()
     val (prefix, content) = splitLinePrefix(previousLine)
-    if (prefix.isEmpty() || content.isBlank()) return@InputTransformation
+    if (prefix.isEmpty()) return@InputTransformation
+
+    if (content.isBlank()) {
+        replace(lineStart, cursor, "")
+        placeCursor(this, lineStart)
+        return@InputTransformation
+    }
 
     val next = when {
         prefix == BULLET -> BULLET

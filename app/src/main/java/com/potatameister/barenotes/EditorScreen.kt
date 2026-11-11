@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -107,7 +108,9 @@ fun EditorScreen(
         var showFolderPicker by remember { mutableStateOf(false) }
         var showNewFolder by remember { mutableStateOf(false) }
         var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
-        var counts by remember { mutableStateOf(0 to 0) }
+        var wordCount by remember { mutableStateOf(0) }
+        var dirty by rememberSaveable(id) { mutableStateOf(false) }
+        var lastBody by rememberSaveable(id) { mutableStateOf(body.text.toString()) }
         val titleFocus = remember { FocusRequester() }
         val bodyFocus = remember { FocusRequester() }
 
@@ -125,6 +128,7 @@ fun EditorScreen(
                 current.folderId == folderId
             ) {
                 saved = true
+                dirty = false
                 return true
             }
             viewModel.saveNote(
@@ -139,7 +143,14 @@ fun EditorScreen(
                 )
             )
             saved = true
+            dirty = false
             return true
+        }
+
+        fun applyFormat(action: () -> Unit) {
+            action()
+            dirty = true
+            bodyFocus.requestFocus()
         }
 
         fun close() {
@@ -169,25 +180,29 @@ fun EditorScreen(
         }
 
         LaunchedEffect(body.text) {
-            delay(250)
             val value = body.text.toString()
-            counts = withContext(Dispatchers.Default) {
-                value.length to countWords(value)
+            if (value != lastBody) {
+                dirty = true
+                lastBody = value
             }
+            delay(250)
+            wordCount = withContext(Dispatchers.Default) { countWords(value) }
         }
 
-        LaunchedEffect(title, body.text, folderId) {
-            delay(1500)
-            save()
+        LaunchedEffect(dirty) {
+            if (dirty) {
+                delay(1500)
+                if (dirty) save()
+            }
         }
 
         LaunchedEffect(viewModel.folders) {
             if (folderId.isNotEmpty() && viewModel.folders.none { it.id == folderId }) {
                 folderId = ""
+                dirty = true
             }
         }
 
-        val current = viewModel.noteById(id)
         val folderLabel = viewModel.folderName(folderId) ?: "Unfiled"
         val listInput = remember { listContinuationTransformation() }
         val bodyStyle = BareType.Body.copy(
@@ -217,6 +232,11 @@ fun EditorScreen(
                     )
                 },
                 actions = {
+                    BareIconButton(
+                        iconRes = R.drawable.ic_folder,
+                        contentDescription = "Move to folder",
+                        onClick = { showFolderPicker = true }
+                    )
                     if (saved) {
                         BareIconButton(
                             iconRes = R.drawable.ic_delete,
@@ -235,14 +255,18 @@ fun EditorScreen(
             ) {
                 BareInput(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = {
+                        title = it
+                        dirty = true
+                    },
                     hint = "Title",
                     style = BareType.EditorTitle,
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(titleFocus),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { bodyFocus.requestFocus() })
                 )
                 BareDivider(
                     modifier = Modifier.padding(top = 8.dp, bottom = 6.dp)
@@ -251,44 +275,7 @@ fun EditorScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val characters = counts.first
-                    val words = counts.second
-                    Text(
-                        text = context.resources.getQuantityString(
-                            R.plurals.character_count,
-                            characters,
-                            characters
-                        ) + " · " + context.resources.getQuantityString(
-                            R.plurals.word_count,
-                            words,
-                            words
-                        ),
-                        style = BareType.Meta,
-                        color = colors.textMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        text = if (saved) {
-                            "Edited ${NoteTime.absolute(context, current?.updatedAt ?: createdAt)}"
-                        } else {
-                            "New note"
-                        },
-                        style = BareType.Meta,
-                        color = colors.textMuted,
-                        maxLines = 1
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .clickable { showFolderPicker = true },
+                        .padding(top = 4.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -296,7 +283,30 @@ fun EditorScreen(
                         style = BareType.Meta,
                         color = colors.textMuted,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = buildString {
+                            append(
+                                when {
+                                    !saved -> "Draft"
+                                    dirty -> "Editing"
+                                    else -> "Saved"
+                                }
+                            )
+                            append(" · ")
+                            append(
+                                context.resources.getQuantityString(
+                                    R.plurals.word_count,
+                                    wordCount,
+                                    wordCount
+                                )
+                            )
+                        },
+                        style = BareType.Meta,
+                        color = colors.textMuted,
+                        maxLines = 1
                     )
                 }
 
@@ -304,6 +314,7 @@ fun EditorScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
+                        .padding(top = 4.dp)
                 ) {
                     BasicTextField(
                         state = body,
@@ -321,8 +332,9 @@ fun EditorScreen(
                                     val line = checkboxPrefixAt(body, offset)
                                         ?: return@awaitEachGesture
                                     val box = layout.getBoundingBox(line.first)
-                                    if (down.position.x <= box.left + 24.dp.toPx()) {
+                                    if (down.position.x <= box.left + 28.dp.toPx()) {
                                         toggleCheckAt(body, line.first, line.second)
+                                        dirty = true
                                         save()
                                         down.consume()
                                     }
@@ -355,107 +367,78 @@ fun EditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
-                    .horizontalScroll(rememberScrollState()),
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BareFormatButton(
                     label = "B",
                     description = "Bold",
                     active = isInlineStyleActive(body, BoldStyle),
-                    onClick = {
-                        toggleInlineStyle(body, BoldStyle)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { toggleInlineStyle(body, BoldStyle) } }
                 )
                 BareFormatButton(
                     label = "I",
                     description = "Italic",
                     active = isInlineStyleActive(body, ItalicStyle),
-                    onClick = {
-                        toggleInlineStyle(body, ItalicStyle)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { toggleInlineStyle(body, ItalicStyle) } }
                 )
                 BareFormatButton(
                     label = "U",
                     description = "Underline",
                     active = isInlineStyleActive(body, UnderlineStyle),
-                    onClick = {
-                        toggleInlineStyle(body, UnderlineStyle)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { toggleInlineStyle(body, UnderlineStyle) } }
                 )
                 BareFormatButton(
                     label = "S",
                     description = "Strikethrough",
                     active = isInlineStyleActive(body, StrikeStyle),
-                    onClick = {
-                        toggleInlineStyle(body, StrikeStyle)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { toggleInlineStyle(body, StrikeStyle) } }
                 )
+                BareFormatDivider()
                 BareFormatButton(
                     label = "H1",
                     description = "Heading 1",
                     active = isHeadingActive(body, 1),
-                    onClick = {
-                        toggleHeading(body, 1)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { toggleHeading(body, 1) } }
                 )
                 BareFormatButton(
                     label = "H2",
                     description = "Heading 2",
                     active = isHeadingActive(body, 2),
-                    onClick = {
-                        toggleHeading(body, 2)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { toggleHeading(body, 2) } }
                 )
+                BareFormatDivider()
                 BareFormatButton(
                     label = "•",
                     description = "Bullet list",
                     active = isPrefixActive(body, PrefixKind.BULLET),
-                    onClick = {
-                        togglePrefix(body, PrefixKind.BULLET)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { togglePrefix(body, PrefixKind.BULLET) } }
                 )
                 BareFormatButton(
                     label = "1.",
                     description = "Numbered list",
                     active = isPrefixActive(body, PrefixKind.NUMBER),
-                    onClick = {
-                        togglePrefix(body, PrefixKind.NUMBER)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { togglePrefix(body, PrefixKind.NUMBER) } }
                 )
                 BareFormatButton(
                     label = "☑\uFE0E",
                     description = "Checklist",
                     active = isPrefixActive(body, PrefixKind.CHECK),
-                    onClick = {
-                        togglePrefix(body, PrefixKind.CHECK)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { togglePrefix(body, PrefixKind.CHECK) } }
                 )
                 BareFormatButton(
                     label = "❝\uFE0E",
                     description = "Quote",
                     active = isPrefixActive(body, PrefixKind.QUOTE),
-                    onClick = {
-                        togglePrefix(body, PrefixKind.QUOTE)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { togglePrefix(body, PrefixKind.QUOTE) } }
                 )
+                BareFormatDivider()
                 BareFormatButton(
                     label = "Clear",
                     description = "Clear formatting",
                     active = false,
-                    onClick = {
-                        clearFormatting(body)
-                        bodyFocus.requestFocus()
-                    }
+                    onClick = { applyFormat { clearFormatting(body) } }
                 )
             }
         }
@@ -483,23 +466,27 @@ fun EditorScreen(
 
         if (showFolderPicker) {
             BareDialog(
-                title = "Folder",
+                title = "Move to folder",
                 onDismissRequest = { showFolderPicker = false },
                 content = {
                     FolderChoiceRow(
                         label = "Unfiled",
+                        count = viewModel.unfiledCount,
                         selected = folderId.isEmpty(),
                         onClick = {
                             folderId = ""
+                            dirty = true
                             showFolderPicker = false
                         }
                     )
                     viewModel.folders.forEach { folder ->
                         FolderChoiceRow(
                             label = folder.name,
+                            count = viewModel.noteCount(folder.id),
                             selected = folderId == folder.id,
                             onClick = {
                                 folderId = folder.id
+                                dirty = true
                                 showFolderPicker = false
                             }
                         )
@@ -534,7 +521,10 @@ fun EditorScreen(
                 onDismiss = { showNewFolder = false },
                 onSave = { name ->
                     val folder = viewModel.createFolder(name)
-                    if (folder != null) folderId = folder.id
+                    if (folder != null) {
+                        folderId = folder.id
+                        dirty = true
+                    }
                     showNewFolder = false
                 }
             )
@@ -545,6 +535,7 @@ fun EditorScreen(
 @Composable
 private fun FolderChoiceRow(
     label: String,
+    count: Int,
     selected: Boolean,
     onClick: () -> Unit
 ) {
@@ -564,11 +555,20 @@ private fun FolderChoiceRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
+        if (count > 0) {
+            Text(
+                text = count.toString(),
+                style = BareType.Meta,
+                color = colors.textMuted,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
         if (selected) {
             Icon(
                 painter = painterResource(R.drawable.ic_check),
                 contentDescription = "Selected",
-                tint = colors.icon
+                tint = colors.icon,
+                modifier = Modifier.padding(start = 8.dp)
             )
         }
     }

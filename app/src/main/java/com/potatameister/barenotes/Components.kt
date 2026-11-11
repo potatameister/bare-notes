@@ -12,14 +12,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -121,7 +122,8 @@ fun BareDivider(modifier: Modifier = Modifier) {
 fun BareNavRow(
     label: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    trailing: String? = null
 ) {
     val colors = LocalBareColors.current
     Row(
@@ -143,8 +145,18 @@ fun BareNavRow(
             color = colors.text,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
         )
+        if (!trailing.isNullOrBlank()) {
+            Text(
+                text = trailing,
+                style = BareType.Meta,
+                color = colors.textMuted,
+                maxLines = 1,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
     }
 }
 
@@ -220,6 +232,17 @@ fun BareFormatButton(
 }
 
 @Composable
+fun BareFormatDivider() {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 4.dp)
+            .width(1.dp)
+            .height(24.dp)
+            .background(LocalBareColors.current.divider)
+    )
+}
+
+@Composable
 fun BareInput(
     value: String,
     onValueChange: (String) -> Unit,
@@ -227,7 +250,8 @@ fun BareInput(
     style: TextStyle = BareType.Body,
     singleLine: Boolean = false,
     modifier: Modifier = Modifier,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
 ) {
     val colors = LocalBareColors.current
     BasicTextField(
@@ -237,6 +261,7 @@ fun BareInput(
         textStyle = style.copy(color = colors.text),
         singleLine = singleLine,
         keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
         cursorBrush = SolidColor(colors.text),
         decorationBox = { inner ->
             Box {
@@ -306,8 +331,8 @@ fun BareNameDialog(
             if (error != null) {
                 Text(
                     text = error.orEmpty(),
-                    style = BareType.Meta,
-                    color = LocalBareColors.current.textMuted
+                    style = BareType.Preview,
+                    color = LocalBareColors.current.text
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))

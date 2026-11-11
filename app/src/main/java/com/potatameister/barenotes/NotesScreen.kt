@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -95,7 +96,8 @@ fun NotesScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .focusRequester(searchFocus),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() })
                     )
                 } else {
                     Text(
@@ -108,7 +110,15 @@ fun NotesScreen(
                 }
             },
             actions = {
-                if (!searchOpen) {
+                if (searchOpen) {
+                    if (viewModel.searchQuery.isNotBlank()) {
+                        BareIconButton(
+                            iconRes = R.drawable.ic_close,
+                            contentDescription = "Clear search",
+                            onClick = { viewModel.updateSearchQuery("") }
+                        )
+                    }
+                } else {
                     BareIconButton(
                         iconRes = R.drawable.ic_search,
                         contentDescription = "Search notes",

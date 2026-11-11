@@ -111,7 +111,11 @@ fun BareApp(viewModel: NotesViewModel) {
                         )
                         route == "folders" -> FoldersScreen(
                             viewModel = viewModel,
-                            onBack = { pop() }
+                            onBack = { pop() },
+                            onOpenFolder = { folderId ->
+                                viewModel.updateFilter(NoteFilter.InFolder(folderId))
+                                routeKey = "notes"
+                            }
                         )
                         route == "settings" -> SettingsScreen(
                             viewModel = viewModel,
@@ -221,7 +225,8 @@ private fun BareDrawer(
                     onClick = {
                         viewModel.updateFilter(NoteFilter.All)
                         close()
-                    }
+                    },
+                    trailing = viewModel.notes.size.takeIf { it > 0 }?.toString()
                 )
                 BareNavRow(
                     label = "Unfiled",
@@ -229,7 +234,8 @@ private fun BareDrawer(
                     onClick = {
                         viewModel.updateFilter(NoteFilter.Unfiled)
                         close()
-                    }
+                    },
+                    trailing = viewModel.unfiledCount.takeIf { it > 0 }?.toString()
                 )
 
                 Text(
@@ -245,7 +251,10 @@ private fun BareDrawer(
                         onClick = {
                             viewModel.updateFilter(NoteFilter.InFolder(folder.id))
                             close()
-                        }
+                        },
+                        trailing = viewModel.noteCount(folder.id)
+                            .takeIf { it > 0 }
+                            ?.toString()
                     )
                 }
                 BareTextRow(

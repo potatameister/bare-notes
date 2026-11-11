@@ -97,6 +97,14 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     fun folderName(id: String): String? = folders.firstOrNull { it.id == id }?.name
 
+    fun noteCount(folderId: String): Int = notes.count { it.folderId == folderId }
+
+    val unfiledCount: Int
+        get() {
+            val known = folders.mapTo(HashSet()) { it.id }
+            return notes.count { it.folderId.isEmpty() || it.folderId !in known }
+        }
+
     fun updateFilter(value: NoteFilter) {
         filter = value
     }
