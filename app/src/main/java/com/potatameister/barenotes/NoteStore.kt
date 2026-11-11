@@ -2,81 +2,117 @@ package com.potatameister.barenotes
 
 import android.content.Context
 import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 
 object NoteStore {
 
-    private const val FILE_NAME = "notes.json"
+    private const val NOTES_DIR = "notes"
+    private const val LEGACY_FILE = "notes.json"
+    private const val LEGACY_BACKUP = "notes.json.migrated"
 
     fun load(context: Context): List<Note> {
-        val file = File(context.filesDir, FILE_NAME)
-        if (!file.exists()) return emptyList()
-        return try {
-            decode(JSONArray(file.readText()))
-        } catch (_: Exception) {
-            emptyList()
+        val dir = File(context.filesDir, NOTES_DIR).apply { mkdirs() }
+        val files = markdownFiles(dir)
+
+        if (files.isEmpty()) {
+            val migrated = migrateLegacy(context, dir)
+            if (migrated.isNotEmpty()) return migrated
+        }
+
+        return files.mapNotNull { file ->
+            val id = file.name.removeSuffix(".md")
+            if (id.isBlank()) return@mapNotNull null
+            try {
+                MarkdownCodec.decode(id, file.readText())
+            } catch (_: Exception) {
+                null
+            }
         }
     }
 
     fun save(context: Context, notes: List<Note>) {
-        val json = encode(notes).toString()
-        val file = File(context.filesDir, FILE_NAME)
-        val temp = File(context.filesDir, "$FILE_NAME.tmp")
-        temp.writeText(json)
-        if (!temp.renameTo(file)) {
-            file.writeText(json)
+        val dir = File(context.filesDir, NOTES_DIR).apply { mkdirs() }
+        val ids = notes.mapTo(HashSet()) { it.id }
+
+        notes.forEach { note ->
+            if (note.id.isBlank()) return@forEach
+            writeNote(dir, note)
+        }
+
+        dir.listFiles()?.forEach { file ->
+            if (!file.isFile) return@forEach
+            if (file.name.endsWith(".tmp")) {
+                file.delete()
+            } else if (file.name.endsWith(".md") &&
+                file.name.removeSuffix(".md") !in ids
+            ) {
+                file.delete()
+            }
+        }
+    }
+
+    private fun writeNote(dir: File, note: Note) {
+        val target = File(dir, "${note.id}.md")
+        val temp = File(dir, "${note.id}.md.tmp")
+        val content = MarkdownCodec.encode(note)
+        temp.writeText(content)
+        if (!temp.renameTo(target)) {
+            target.writeText(content)
             temp.delete()
         }
     }
 
-    fun encode(notes: List<Note>): JSONArray {
-        val array = JSONArray()
-        notes.forEach { note ->
-            val spans = JSONArray()
-            note.spans.forEach { span ->
-                spans.put(
-                    JSONObject()
-                        .put("type", span.type)
-                        .put("start", span.start)
-                        .put("end", span.end)
-                )
-            }
-            array.put(
-                JSONObject()
-                    .put("id", note.id)
-                    .put("title", note.title)
-                    .put("body", note.body)
-                    .put("createdAt", note.createdAt)
-                    .put("updatedAt", note.updatedAt)
-                    .put("spans", spans)
-                    .put("folderId", note.folderId)
-            )
+    private fun markdownFiles(dir: File): List<File> =
+        dir.listFiles { file -> file.isFile && file.name.endsWith(".md") }
+            ?.sortedBy { it.name }
+            .orEmpty()
+
+    private fun migrateLegacy(context: Context, dir: File): List<Note> {
+        val legacy = File(context.filesDir, LEGACY_FILE)
+        if (!legacy.exists()) return emptyList()
+
+        val notes = try {
+            decodeLegacy(JSONArray(legacy.readText()))
+        } catch (_: Exception) {
+            emptyList()
         }
-        return array
+        if (notes.isEmpty()) return emptyList()
+
+        notes.forEach { note ->
+            if (note.id.isNotBlank()) writeNote(dir, note)
+        }
+
+        val backup = File(context.filesDir, LEGACY_BACKUP)
+        try {
+            legacy.copyTo(backup, overwrite = true)
+            legacy.delete()
+        } catch (_: Exception) {
+            // Keep the legacy file if the backup cannot be written.
+        }
+        return notes
     }
 
-    fun decode(array: JSONArray): List<Note> = buildList {
+    fun decodeLegacy(array: JSONArray): List<Note> = buildList {
         for (i in 0 until array.length()) {
             val item = array.optJSONObject(i) ?: continue
             val body = item.optString("body")
+            val id = item.optString("id")
+            if (id.isBlank()) continue
             add(
                 Note(
-                    id = item.optString("id"),
+                    id = id,
                     title = item.optString("title"),
                     body = body,
                     createdAt = item.optLong("createdAt", item.optLong("updatedAt")),
                     updatedAt = item.optLong("updatedAt"),
-                    spans = decodeSpans(item.optJSONArray("spans"), body.length),
+                    spans = decodeLegacySpans(item.optJSONArray("spans"), body.length),
                     folderId = item.optString("folderId")
                 )
             )
         }
     }
-        .filter { it.id.isNotBlank() }
-        .distinctBy { it.id }
 
-    private fun decodeSpans(array: JSONArray?, length: Int): List<NoteSpan> {
+    private fun decodeLegacySpans(array: JSONArray?, length: Int): List<NoteSpan> {
         if (array == null) return emptyList()
         return buildList {
             for (i in 0 until array.length()) {

@@ -209,7 +209,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         themeMode = mode
     }
 
-    fun exportJson(): String = Backup.encode(notes, folders)
+    fun exportData(): ByteArray = Backup.encode(notes, folders)
 
     fun replaceAll(data: Backup.BackupData) {
         viewModelScope.launch {

@@ -18,11 +18,10 @@ data class NoteSpan(
     companion object {
         const val BOLD = "bold"
         const val ITALIC = "italic"
-        const val UNDERLINE = "underline"
         const val STRIKE = "strike"
         const val H1 = "h1"
         const val H2 = "h2"
 
-        val TYPES = setOf(BOLD, ITALIC, UNDERLINE, STRIKE, H1, H2)
+        val TYPES = setOf(BOLD, ITALIC, STRIKE, H1, H2)
     }
 }

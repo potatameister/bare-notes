@@ -60,6 +60,24 @@ import androidx.compose.ui.unit.sp
 val LocalMessenger = compositionLocalOf<(String) -> Unit> { {} }
 
 @Composable
+fun BareLockup() {
+    val colors = LocalBareColors.current
+    Column {
+        Text(
+            text = "BARE",
+            style = BareType.Wordmark,
+            color = colors.text
+        )
+        Text(
+            text = "NOTES",
+            style = BareType.Eyebrow,
+            color = colors.textMuted,
+            modifier = Modifier.padding(start = 1.dp, top = 6.dp)
+        )
+    }
+}
+
+@Composable
 fun BareTopBar(
     title: @Composable () -> Unit,
     navigation: (@Composable () -> Unit)? = null,
@@ -229,7 +247,6 @@ fun BareFormatButton(
     val style = when (label) {
         "B" -> BareType.Body.copy(fontWeight = FontWeight.Bold)
         "I" -> BareType.Body.copy(fontStyle = FontStyle.Italic)
-        "U" -> BareType.Body.copy(textDecoration = TextDecoration.Underline)
         "S" -> BareType.Body.copy(textDecoration = TextDecoration.LineThrough)
         "H1", "H2" -> BareType.Body.copy(fontWeight = FontWeight.Bold)
         else -> BareType.Body

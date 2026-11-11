@@ -484,12 +484,6 @@ fun EditorScreen(
                     onClick = { applyFormat { toggleInlineStyle(body, ItalicStyle) } }
                 )
                 BareFormatButton(
-                    label = "U",
-                    description = "Underline",
-                    active = isInlineStyleActive(body, UnderlineStyle),
-                    onClick = { applyFormat { toggleInlineStyle(body, UnderlineStyle) } }
-                )
-                BareFormatButton(
                     label = "S",
                     description = "Strikethrough",
                     active = isInlineStyleActive(body, StrikeStyle),

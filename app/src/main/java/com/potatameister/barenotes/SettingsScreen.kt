@@ -43,19 +43,21 @@ fun SettingsScreen(
     var pendingImport by remember { mutableStateOf<Backup.BackupData?>(null) }
 
     val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
+        ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
         if (uri != null) {
-            val json = viewModel.exportJson()
+            val data = viewModel.exportData()
             scope.launch {
                 val ok = withContext(Dispatchers.IO) {
                     runCatching {
                         context.contentResolver.openOutputStream(uri)?.use {
-                            it.write(json.toByteArray())
+                            it.write(data)
                         } ?: error("No stream")
                     }.isSuccess
                 }
-                messenger(if (ok) "Backup exported." else "Could not export backup.")
+                messenger(
+                    if (ok) "Markdown backup exported." else "Could not export backup."
+                )
             }
         }
     }
@@ -147,18 +149,25 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 24.dp)
             )
             BareTextRow(
-                label = "Export backup",
+                label = "Export Markdown",
                 value = null,
                 onClick = {
-                    exportLauncher.launch("bare-notes-backup.json")
+                    exportLauncher.launch("bare-notes-markdown.zip")
                 }
             )
             BareDivider()
             BareTextRow(
-                label = "Import backup",
+                label = "Import Markdown",
                 value = null,
                 onClick = {
-                    importLauncher.launch(arrayOf("application/json", "text/plain"))
+                    importLauncher.launch(
+                        arrayOf(
+                            "application/zip",
+                            "application/json",
+                            "text/plain",
+                            "application/octet-stream"
+                        )
+                    )
                 }
             )
             BareDivider()
@@ -273,6 +282,6 @@ private fun textSizeLabel(sp: Int): String = when (sp) {
 private fun readBackup(context: android.content.Context, uri: Uri): Backup.BackupData? =
     runCatching {
         context.contentResolver.openInputStream(uri)?.use { stream ->
-            Backup.decode(stream.bufferedReader().readText())
+            Backup.decode(stream.readBytes())
         }
     }.getOrNull()

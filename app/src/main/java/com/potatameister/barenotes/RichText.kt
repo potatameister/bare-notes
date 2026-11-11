@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.sp
 
 val BoldStyle = SpanStyle(fontWeight = FontWeight.Bold)
 val ItalicStyle = SpanStyle(fontStyle = FontStyle.Italic)
-val UnderlineStyle = SpanStyle(textDecoration = TextDecoration.Underline)
 val StrikeStyle = SpanStyle(textDecoration = TextDecoration.LineThrough)
 val H1Style = SpanStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold)
 val H2Style = SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -34,7 +33,6 @@ private val NUMBER_PREFIX = Regex("^(\\d+)\\.\\s+")
 private fun styleForType(type: String): SpanStyle? = when (type) {
     NoteSpan.BOLD -> BoldStyle
     NoteSpan.ITALIC -> ItalicStyle
-    NoteSpan.UNDERLINE -> UnderlineStyle
     NoteSpan.STRIKE -> StrikeStyle
     NoteSpan.H1 -> H1Style
     NoteSpan.H2 -> H2Style
@@ -49,7 +47,6 @@ private fun spanType(style: SpanStyle): String? = when {
     style.fontSize == 20.sp -> NoteSpan.H2
     style.fontWeight == FontWeight.Bold -> NoteSpan.BOLD
     style.fontStyle == FontStyle.Italic -> NoteSpan.ITALIC
-    style.textDecoration == TextDecoration.Underline -> NoteSpan.UNDERLINE
     style.textDecoration == TextDecoration.LineThrough -> NoteSpan.STRIKE
     else -> null
 }
@@ -57,7 +54,6 @@ private fun spanType(style: SpanStyle): String? = when {
 private fun spanMatches(style: SpanStyle, target: SpanStyle): Boolean = when (target) {
     BoldStyle -> style.fontWeight == FontWeight.Bold && !isHeadingStyle(style)
     ItalicStyle -> style.fontStyle == FontStyle.Italic
-    UnderlineStyle -> style.textDecoration == TextDecoration.Underline
     StrikeStyle -> style.textDecoration == TextDecoration.LineThrough
     H1Style -> style.fontSize == 24.sp
     H2Style -> style.fontSize == 20.sp

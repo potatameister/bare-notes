@@ -59,17 +59,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 24.dp)
         ) {
-            Text(
-                text = stringResource(R.string.bare),
-                style = BareType.Wordmark,
-                color = colors.text
-            )
-            Text(
-                text = stringResource(R.string.notes),
-                style = BareType.Eyebrow,
-                color = colors.textMuted,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            BareLockup()
 
             Text(
                 text = stringResource(R.string.about_intro),

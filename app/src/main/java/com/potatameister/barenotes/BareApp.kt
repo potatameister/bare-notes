@@ -199,17 +199,7 @@ private fun BareDrawer(
                 .fillMaxSize()
                 .padding(BareSidebarPadding)
         ) {
-            Text(
-                text = "BARE",
-                style = BareType.Wordmark,
-                color = colors.text
-            )
-            Text(
-                text = "NOTES",
-                style = BareType.Eyebrow,
-                color = colors.textMuted,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            BareLockup()
             BareDivider(
                 modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
             )

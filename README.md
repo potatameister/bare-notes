@@ -13,7 +13,7 @@ A tiny, fast, offline notes app for Android.
 - Search
 - System, light, and dark themes
 - Editor text size, sort by modified/created
-- Bold, italic, underline, strike, headings, bullets, numbers, checklists, quotes
+- Bold, italic, strike, headings, bullets, numbers, checklists, quotes
 - JSON backup export and import
 
 ## Status
