@@ -8,6 +8,7 @@
 
 <img src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android 8.0+">
 <img src="https://img.shields.io/badge/Permissions-none-2ea44f?style=for-the-badge" alt="No permissions">
+<img src="https://img.shields.io/badge/Size-1.4_MB-007EC6?style=for-the-badge" alt="1.4 MB">
 <img src="https://img.shields.io/badge/License-GPL--3.0-6f42c1?style=for-the-badge" alt="GPL-3.0">
 
 </div>
