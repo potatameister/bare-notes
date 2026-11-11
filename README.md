@@ -8,7 +8,8 @@ A tiny, fast, offline notes app for Android.
 - No internet permission
 - No cloud backup; export manually
 - Notes stored locally as JSON
-- One-level folders
+- One-level folders with note counts and quick move
+- Autosave with saved/unsaved status
 - Search
 - System, light, and dark themes
 - Editor text size, sort by modified/created
