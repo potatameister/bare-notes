@@ -7,8 +7,10 @@ package com.potatameister.barenotes
 object MarkdownCodec {
 
     private const val BULLET = "• "
-    private const val CHECK_OPEN = "☐ "
-    private const val CHECK_DONE = "☑ "
+    private const val CHECK_OPEN = "☐  "
+    private const val CHECK_DONE = "☑  "
+    private const val CHECK_OPEN_LEGACY = "☐ "
+    private const val CHECK_DONE_LEGACY = "☑ "
     private const val QUOTE = "❝ "
     private val NUMBER_PREFIX = Regex("^(\\d+)\\.\\s+")
     private val MD_CHECK_OPEN = Regex("^- \\[ \\] ")
@@ -95,8 +97,10 @@ object MarkdownCodec {
                     out.append(if (heading.type == NoteSpan.H1) "# " else "## ")
                     out.append(inline)
                 }
-                prefix == CHECK_OPEN -> out.append("- [ ] ").append(inline)
-                prefix == CHECK_DONE -> out.append("- [x] ").append(inline)
+                prefix == CHECK_OPEN || prefix == CHECK_OPEN_LEGACY ->
+                    out.append("- [ ] ").append(inline)
+                prefix == CHECK_DONE || prefix == CHECK_DONE_LEGACY ->
+                    out.append("- [x] ").append(inline)
                 prefix == BULLET -> out.append("- ").append(inline)
                 prefix == QUOTE -> out.append("> ").append(inline)
                 prefix.isNotEmpty() && NUMBER_PREFIX.matches(prefix) ->
@@ -266,7 +270,14 @@ object MarkdownCodec {
     }
 
     private fun internalPrefix(line: String): String {
-        for (prefix in listOf(CHECK_OPEN, CHECK_DONE, BULLET, QUOTE)) {
+        for (prefix in listOf(
+            CHECK_OPEN,
+            CHECK_DONE,
+            CHECK_OPEN_LEGACY,
+            CHECK_DONE_LEGACY,
+            BULLET,
+            QUOTE
+        )) {
             if (line.startsWith(prefix)) return prefix
         }
         NUMBER_PREFIX.find(line)?.let { return it.value }

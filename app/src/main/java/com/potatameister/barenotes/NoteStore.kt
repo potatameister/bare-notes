@@ -89,7 +89,9 @@ object NoteStore {
         } catch (_: Exception) {
             // Keep the legacy file if the backup cannot be written.
         }
-        return notes
+        return notes.map { note ->
+            MarkdownCodec.decode(note.id, MarkdownCodec.encode(note)) ?: note
+        }
     }
 
     fun decodeLegacy(array: JSONArray): List<Note> = buildList {

@@ -97,6 +97,9 @@ object Backup {
                 notes = root.optJSONArray("notes")
                     ?.let(NoteStore::decodeLegacy)
                     .orEmpty()
+                    .map { note ->
+                        MarkdownCodec.decode(note.id, MarkdownCodec.encode(note)) ?: note
+                    }
                     .distinctBy { it.id },
                 folders = root.optJSONArray("folders")
                     ?.let(FolderStore::decode)
