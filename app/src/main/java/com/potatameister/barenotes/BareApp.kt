@@ -271,14 +271,16 @@ private fun BareDrawer(
                             ?.toString()
                     )
                 }
-                BareTextRow(
-                    label = "Manage folders",
-                    value = viewModel.folders.size.takeIf { it > 0 }?.toString(),
-                    onClick = {
-                        close()
-                        onOpenFolders()
-                    }
-                )
+                Box(modifier = Modifier.padding(start = 14.dp)) {
+                    BareTextRow(
+                        label = "Manage folders",
+                        value = viewModel.folders.size.takeIf { it > 0 }?.toString(),
+                        onClick = {
+                            close()
+                            onOpenFolders()
+                        }
+                    )
+                }
 
                 BareDivider(
                     modifier = Modifier.padding(vertical = 8.dp)
@@ -292,7 +294,8 @@ private fun BareDrawer(
                             viewModel.updateThemeMode(
                                 if (dark) ThemeMode.LIGHT else ThemeMode.DARK
                             )
-                        },
+                        }
+                        .padding(start = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
