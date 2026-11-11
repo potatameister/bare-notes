@@ -53,7 +53,7 @@ jobs:
         run: |
           APK=app/build/outputs/apk/release/app-release.apk
           test -f "$APK"
-          apksigner verify --print-certs "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$APK"
 
       - name: Report release APK size
         run: ls -l app/build/outputs/apk/release/app-release.apk
