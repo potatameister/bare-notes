@@ -432,7 +432,7 @@ private fun DialogAction(
     val colors = LocalBareColors.current
     Box(
         modifier = Modifier
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center
