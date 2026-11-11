@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package com.potatameister.barenotes
 
 import androidx.activity.compose.BackHandler
