@@ -1,0 +1,15 @@
+BARE Notes is a small, fast, offline notes app for Android.
+
+- Markdown files stored locally
+- One-level folders with note counts
+- Reader mode and WYSIWYG editor
+- Bold, italic, strike, headings, bullets, numbers, checklists, quotes
+- Search, light/dark/system themes, text size, sort
+- Markdown backup export and import
+- Delete a note with Undo
+
+No accounts. No ads. No tracking. No internet permission. Nothing leaves your device.
+
+Uninstall removes all notes. Export a Markdown backup first.
+
+Requires Android 8.0 or newer.

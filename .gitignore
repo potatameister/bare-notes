@@ -16,6 +16,10 @@ build/
 *.aab
 *.apk.idsig
 mapping.txt
+fastlane/Preview.html
+fastlane/report.xml
+fastlane/screenshots/
+fastlane/test_output/
 
 # Signing / secrets — never commit
 *.jks

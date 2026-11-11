@@ -27,8 +27,14 @@ Download the signed release APK from the latest GitHub Actions run:
 
 1. Open the **Actions** tab.
 2. Open the latest **Android** run.
-3. Download the `bare-notes-release` artifact.
-4. Install `app-release.apk` on your phone.
+3. Download the `BARE-Notes-Release-APK` artifact.
+4. Install `BARE-Notes-release.apk` on your phone.
+
+## Release
+
+Only the signed release APK is published. Store metadata lives in
+`fastlane/metadata/android/en-US`; update the matching `changelogs/<versionCode>.txt`
+when cutting a release. No tag or GitHub Release is created automatically.
 
 ## Build
 

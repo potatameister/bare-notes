@@ -55,12 +55,15 @@ jobs:
           test -f "$APK"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$APK"
 
+      - name: Name release APK
+        run: mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/BARE-Notes-release.apk
+
       - name: Report release APK size
-        run: ls -l app/build/outputs/apk/release/app-release.apk
+        run: ls -l app/build/outputs/apk/release/BARE-Notes-release.apk
 
       - name: Upload release APK
         uses: actions/upload-artifact@v7
         with:
-          name: bare-notes-release
-          path: app/build/outputs/apk/release/app-release.apk
+          name: BARE-Notes-Release-APK
+          path: app/build/outputs/apk/release/BARE-Notes-release.apk
           if-no-files-found: error

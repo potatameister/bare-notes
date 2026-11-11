@@ -1,0 +1,8 @@
+Initial release.
+
+- Markdown storage with one-time JSON migration
+- Reader and WYSIWYG editor, Save, tap-to-edit, undo/redo
+- Folders, search, themes, text size, sort
+- Markdown ZIP export/import
+- Note delete with Undo
+- No internet permission
