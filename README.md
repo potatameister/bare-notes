@@ -10,6 +10,7 @@ A tiny, fast, offline notes app for Android.
 - Notes stored locally as Markdown (`.md`)
 - One-level folders with note counts and quick move
 - Autosave with saved/unsaved status
+- Delete a note with Undo
 - Search
 - System, light, and dark themes
 - Editor text size, sort by modified/created

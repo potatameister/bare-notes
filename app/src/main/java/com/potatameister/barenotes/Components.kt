@@ -61,6 +61,9 @@ import androidx.compose.ui.window.DialogProperties
 
 val LocalMessenger = compositionLocalOf<(String) -> Unit> { {} }
 
+val LocalActionMessenger =
+    compositionLocalOf<(String, String, () -> Unit) -> Unit> { { _, _, _ -> } }
+
 @Composable
 fun BareLockup() {
     val colors = LocalBareColors.current
@@ -387,6 +390,7 @@ fun BareNameDialog(
         onDismissRequest = onDismiss,
         confirmText = confirmText,
         onConfirm = ::submit,
+        showActionDivider = false,
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
@@ -457,6 +461,7 @@ fun BareDialog(
     onConfirm: (() -> Unit)? = null,
     dismissText: String = "Cancel",
     confirmEnabled: Boolean = true,
+    showActionDivider: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val colors = LocalBareColors.current
@@ -492,8 +497,10 @@ fun BareDialog(
                     content = content
                 )
                 Spacer(modifier = Modifier.height(20.dp))
-                BareDivider()
-                Spacer(modifier = Modifier.height(8.dp))
+                if (showActionDivider) {
+                    BareDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,

@@ -324,6 +324,41 @@ fun checkboxPrefixAt(state: TextFieldState, offset: Int): Pair<Int, Int>? {
     }
 }
 
+fun normalizeCheckboxPrefixes(state: TextFieldState) {
+    repeat(20) {
+        val text = state.text
+        var lineStart = 0
+        var target = -1
+        while (lineStart < text.length) {
+            val newline = text.indexOf('\n', lineStart)
+            val lineEnd = if (newline < 0) text.length else newline
+            if (lineStart < lineEnd) {
+                val first = text[lineStart]
+                val malformed = (first == '☐' || first == '☑') &&
+                    (lineStart + 1 >= lineEnd || text[lineStart + 1] != ' ')
+                if (malformed) {
+                    target = lineStart
+                    break
+                }
+            }
+            if (newline < 0) break
+            lineStart = newline + 1
+        }
+        if (target < 0) return
+
+        val selection = state.selection
+        state.edit {
+            replace(target, target + 1, "")
+            val cursor = if (selection.start > target) {
+                selection.start - 1
+            } else {
+                selection.start
+            }
+            placeCursor(this, cursor.coerceIn(0, length))
+        }
+    }
+}
+
 fun placeCursorAt(state: TextFieldState, offset: Int) {
     state.edit {
         placeCursor(this, offset.coerceIn(0, length))
@@ -332,12 +367,38 @@ fun placeCursorAt(state: TextFieldState, offset: Int) {
 
 fun checkboxOutputTransformation(): OutputTransformation = OutputTransformation {
     val buffer = asCharSequence()
+    val blockGap = SpanStyle(letterSpacing = 2.sp)
     var lineStart = 0
     while (lineStart < length) {
-        if (buffer[lineStart] == '☐' || buffer[lineStart] == '☑') {
-            addStyle(SpanStyle(color = Color.Transparent), lineStart, lineStart + 1)
-        }
         val newline = buffer.indexOf('\n', lineStart)
+        val lineEnd = if (newline < 0) length else newline
+        val first = buffer[lineStart]
+        val hasSpace = lineStart + 1 < lineEnd && buffer[lineStart + 1] == ' '
+
+        when {
+            (first == '☐' || first == '☑') && hasSpace -> {
+                addStyle(
+                    SpanStyle(
+                        color = Color.Transparent,
+                        letterSpacing = 3.sp
+                    ),
+                    lineStart,
+                    lineStart + 1
+                )
+            }
+            (first == '•' || first == '❝') && hasSpace -> {
+                addStyle(blockGap, lineStart + 1, lineStart + 2)
+            }
+            else -> {
+                val line = buffer.subSequence(lineStart, lineEnd).toString()
+                val number = NUMBER_PREFIX.find(line)
+                if (number != null) {
+                    val space = lineStart + number.value.lastIndexOf(' ')
+                    addStyle(blockGap, space, space + 1)
+                }
+            }
+        }
+
         if (newline < 0) break
         lineStart = newline + 1
     }

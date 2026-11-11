@@ -88,6 +88,7 @@ fun EditorScreen(
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val actionMessenger = LocalActionMessenger.current
 
     Box(
         modifier = Modifier
@@ -121,7 +122,6 @@ fun EditorScreen(
         }
         var saved by rememberSaveable(id) { mutableStateOf(existing != null) }
         var deleted by remember { mutableStateOf(false) }
-        var showDelete by remember { mutableStateOf(false) }
         var showFolderPicker by remember { mutableStateOf(false) }
         var showNewFolder by remember { mutableStateOf(false) }
         var wordCount by remember { mutableStateOf(0) }
@@ -200,6 +200,26 @@ fun EditorScreen(
             onClose()
         }
 
+        fun deleteNoteNow() {
+            val snapshot = Note(
+                id = id,
+                title = title.trim(),
+                body = body.text.toString(),
+                createdAt = createdAt,
+                updatedAt = System.currentTimeMillis(),
+                spans = serializeSpans(body),
+                folderId = folderId
+            )
+            deleted = true
+            viewModel.deleteNote(id)
+            keyboard?.hide()
+            focusManager.clearFocus()
+            onClose()
+            actionMessenger("Note deleted.", "Undo") {
+                viewModel.saveNote(snapshot)
+            }
+        }
+
         BackHandler { close() }
 
         val latestSave = rememberUpdatedState { save() }
@@ -226,6 +246,7 @@ fun EditorScreen(
         }
 
         LaunchedEffect(body.text) {
+            normalizeCheckboxPrefixes(body)
             val value = body.text.toString()
             if (value != lastBody) {
                 dirty = true
@@ -315,7 +336,7 @@ fun EditorScreen(
                         BareIconButton(
                             iconRes = R.drawable.ic_delete,
                             contentDescription = "Delete note",
-                            onClick = { showDelete = true }
+                            onClick = { deleteNoteNow() }
                         )
                     }
                 }
@@ -544,34 +565,6 @@ fun EditorScreen(
             }
         }
 
-        if (showDelete) {
-            BareDialog(
-                title = "Delete note?",
-                onDismissRequest = { showDelete = false },
-                confirmText = "Delete",
-                onConfirm = {
-                    deleted = true
-                    viewModel.deleteNote(id)
-                    showDelete = false
-                    onClose()
-                },
-                content = {
-                    Text(
-                        text = title.ifBlank { "Untitled" },
-                        style = BareType.Body,
-                        color = colors.text,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "This note will be permanently deleted. This cannot be undone.",
-                        style = BareType.Body,
-                        color = colors.textMuted
-                    )
-                }
-            )
-        }
-
         if (showFolderPicker) {
             BareDialog(
                 title = "Move to folder",
@@ -752,11 +745,12 @@ private fun DrawScope.drawCheckboxes(
             val start = layout.getLineStart(line)
             if (start >= text.length) continue
             val checked = text[start] == '☑'
-            if (text[start] != '☐' && !checked) continue
+            val hasSpace = start + 1 < text.length && text[start + 1] == ' '
+            if ((text[start] != '☐' && !checked) || !hasSpace) continue
 
             val lineTop = layout.getLineTop(line) - scrollOffset
             val lineHeight = layout.getLineBottom(line) - layout.getLineTop(line)
-            val boxSize = minOf(18.dp.toPx(), lineHeight - 3.dp.toPx())
+            val boxSize = minOf(17.dp.toPx(), lineHeight - 3.dp.toPx())
                 .coerceAtLeast(13.dp.toPx())
             val top = lineTop + (lineHeight - boxSize) / 2f
             val left = layout.getLineLeft(line) + 1.dp.toPx()

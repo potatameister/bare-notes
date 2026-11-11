@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -21,8 +22,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -38,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -62,6 +66,18 @@ fun BareApp(viewModel: NotesViewModel) {
             scope.launch { snackbar.showSnackbar(message) }
         }
 
+        val actionMessenger: (String, String, () -> Unit) -> Unit =
+            { message, actionLabel, action ->
+                scope.launch {
+                    val result = snackbar.showSnackbar(
+                        message = message,
+                        actionLabel = actionLabel,
+                        duration = SnackbarDuration.Long
+                    )
+                    if (result == SnackbarResult.ActionPerformed) action()
+                }
+            }
+
         LaunchedEffect(viewModel.storageError) {
             val message = viewModel.storageError ?: return@LaunchedEffect
             viewModel.clearStorageError()
@@ -84,7 +100,10 @@ fun BareApp(viewModel: NotesViewModel) {
             }
         }
 
-        CompositionLocalProvider(LocalMessenger provides messenger) {
+        CompositionLocalProvider(
+            LocalMessenger provides messenger,
+            LocalActionMessenger provides actionMessenger
+        ) {
             ModalNavigationDrawer(
                 drawerState = drawerState,
                 gesturesEnabled = route == "notes",
@@ -167,14 +186,34 @@ fun BareApp(viewModel: NotesViewModel) {
                                 modifier = Modifier
                                     .widthIn(max = 340.dp)
                                     .background(colors.text)
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    .padding(start = 16.dp, top = 4.dp, end = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
                                     text = data.visuals.message,
                                     style = BareType.Body,
-                                    color = colors.bg
+                                    color = colors.bg,
+                                    modifier = Modifier.padding(vertical = 12.dp)
                                 )
+                                val actionLabel = data.visuals.actionLabel
+                                if (!actionLabel.isNullOrEmpty()) {
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .heightIn(min = 48.dp)
+                                            .clickable { data.performAction() }
+                                            .padding(horizontal = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = actionLabel,
+                                            style = BareType.Body.copy(
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = colors.bg
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
