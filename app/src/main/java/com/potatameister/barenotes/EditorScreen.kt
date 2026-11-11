@@ -3,13 +3,10 @@ package com.potatameister.barenotes
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +23,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,12 +39,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -108,7 +101,6 @@ fun EditorScreen(
         var showDelete by remember { mutableStateOf(false) }
         var showFolderPicker by remember { mutableStateOf(false) }
         var showNewFolder by remember { mutableStateOf(false) }
-        var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
         var wordCount by remember { mutableStateOf(0) }
         var dirty by rememberSaveable(id) { mutableStateOf(false) }
         var revision by remember { mutableStateOf(0) }
@@ -326,32 +318,11 @@ fun EditorScreen(
                         state = body,
                         modifier = Modifier
                             .fillMaxSize()
-                            .focusRequester(bodyFocus)
-                            .pointerInput(textLayout) {
-                                awaitEachGesture {
-                                    val down = awaitFirstDown(
-                                        requireUnconsumed = false,
-                                        pass = PointerEventPass.Initial
-                                    )
-                                    val layout = textLayout ?: return@awaitEachGesture
-                                    val offset = layout.getOffsetForPosition(down.position)
-                                    val line = checkboxPrefixAt(body, offset)
-                                        ?: return@awaitEachGesture
-                                    val box = layout.getBoundingBox(line.first)
-                                    if (down.position.x <= box.left + 28.dp.toPx()) {
-                                        toggleCheckAt(body, line.first, line.second)
-                                        dirty = true
-                                        revision++
-                                        save()
-                                        down.consume()
-                                    }
-                                }
-                            },
+                            .focusRequester(bodyFocus),
                         textStyle = bodyStyle,
                         keyboardOptions = KeyboardOptions.Default,
                         lineLimits = TextFieldLineLimits.MultiLine(),
                         inputTransformation = listInput,
-                        onTextLayout = { getResult -> textLayout = getResult() },
                         cursorBrush = SolidColor(colors.text),
                         decorator = androidx.compose.foundation.text.input.TextFieldDecorator { inner ->
                             Box {
@@ -433,12 +404,6 @@ fun EditorScreen(
                     description = "Numbered list",
                     active = isPrefixActive(body, PrefixKind.NUMBER),
                     onClick = { applyFormat { togglePrefix(body, PrefixKind.NUMBER) } }
-                )
-                BareFormatButton(
-                    label = "☑\uFE0E",
-                    description = "Checklist",
-                    active = isPrefixActive(body, PrefixKind.CHECK),
-                    onClick = { applyFormat { togglePrefix(body, PrefixKind.CHECK) } }
                 )
                 BareFormatButton(
                     label = "❝\uFE0E",

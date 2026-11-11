@@ -2,12 +2,10 @@ package com.potatameister.barenotes
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,8 +20,6 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -36,9 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
 @Composable
@@ -86,7 +80,6 @@ fun BareApp(viewModel: NotesViewModel) {
                 drawerContent = {
                     BareDrawer(
                         viewModel = viewModel,
-                        dark = dark,
                         drawerState = drawerState,
                         onOpenFolders = { push("folders") },
                         onOpenSettings = { push("settings") },
@@ -174,7 +167,6 @@ fun BareApp(viewModel: NotesViewModel) {
 @Composable
 private fun BareDrawer(
     viewModel: NotesViewModel,
-    dark: Boolean,
     drawerState: androidx.compose.material3.DrawerState,
     onOpenFolders: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -230,16 +222,6 @@ private fun BareDrawer(
                     },
                     trailing = viewModel.notes.size.takeIf { it > 0 }?.toString()
                 )
-                BareNavRow(
-                    label = "Unfiled",
-                    selected = viewModel.filter == NoteFilter.Unfiled,
-                    onClick = {
-                        viewModel.updateFilter(NoteFilter.Unfiled)
-                        close()
-                    },
-                    trailing = viewModel.unfiledCount.takeIf { it > 0 }?.toString()
-                )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -251,6 +233,14 @@ private fun BareDrawer(
                         style = BareType.Eyebrow,
                         color = colors.textMuted,
                         modifier = Modifier.weight(1f)
+                    )
+                    BareIconButton(
+                        iconRes = R.drawable.ic_edit,
+                        contentDescription = "Manage folders",
+                        onClick = {
+                            close()
+                            onOpenFolders()
+                        }
                     )
                     BareIconButton(
                         iconRes = R.drawable.ic_plus,
@@ -271,54 +261,9 @@ private fun BareDrawer(
                             ?.toString()
                     )
                 }
-                Box(modifier = Modifier.padding(start = 14.dp)) {
-                    BareTextRow(
-                        label = "Manage folders",
-                        value = viewModel.folders.size.takeIf { it > 0 }?.toString(),
-                        onClick = {
-                            close()
-                            onOpenFolders()
-                        }
-                    )
-                }
-
                 BareDivider(
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .clickable {
-                            viewModel.updateThemeMode(
-                                if (dark) ThemeMode.LIGHT else ThemeMode.DARK
-                            )
-                        }
-                        .padding(start = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Dark mode",
-                        style = BareType.Body,
-                        color = colors.text,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Switch(
-                        checked = dark,
-                        onCheckedChange = {
-                            viewModel.updateThemeMode(if (it) ThemeMode.DARK else ThemeMode.LIGHT)
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = colors.text,
-                            checkedTrackColor = colors.divider,
-                            checkedBorderColor = colors.divider,
-                            uncheckedThumbColor = colors.textMuted,
-                            uncheckedTrackColor = colors.divider,
-                            uncheckedBorderColor = colors.divider
-                        )
-                    )
-                }
 
                 BareNavRow(
                     label = "Settings",
