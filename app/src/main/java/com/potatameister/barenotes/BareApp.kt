@@ -182,6 +182,7 @@ private fun BareDrawer(
 ) {
     val colors = LocalBareColors.current
     val scope = rememberCoroutineScope()
+    var showNewFolder by rememberSaveable { mutableStateOf(false) }
 
     fun close() {
         scope.launch { drawerState.close() }
@@ -239,12 +240,24 @@ private fun BareDrawer(
                     trailing = viewModel.unfiledCount.takeIf { it > 0 }?.toString()
                 )
 
-                Text(
-                    text = "FOLDERS",
-                    style = BareType.Eyebrow,
-                    color = colors.textMuted,
-                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "FOLDERS",
+                        style = BareType.Eyebrow,
+                        color = colors.textMuted,
+                        modifier = Modifier.weight(1f)
+                    )
+                    BareIconButton(
+                        iconRes = R.drawable.ic_plus,
+                        contentDescription = "New folder",
+                        onClick = { showNewFolder = true }
+                    )
+                }
                 viewModel.folders.forEach { folder ->
                     BareNavRow(
                         label = folder.name,
@@ -260,6 +273,7 @@ private fun BareDrawer(
                 }
                 BareTextRow(
                     label = "Manage folders",
+                    value = viewModel.folders.size.takeIf { it > 0 }?.toString(),
                     onClick = {
                         close()
                         onOpenFolders()
@@ -328,5 +342,25 @@ private fun BareDrawer(
                 modifier = Modifier.padding(top = 12.dp)
             )
         }
+    }
+
+    if (showNewFolder) {
+        BareNameDialog(
+            title = "New folder",
+            confirmText = "Create",
+            initial = "",
+            hint = "Folder name",
+            errorFor = { name -> folderNameError(viewModel, name, null) },
+            onDismiss = { showNewFolder = false },
+            onSave = { name ->
+                val folder = viewModel.createFolder(name)
+                if (folder != null) {
+                    viewModel.updateFilter(NoteFilter.InFolder(folder.id))
+                    viewModel.updateSearchQuery("")
+                    close()
+                }
+                showNewFolder = false
+            }
+        )
     }
 }

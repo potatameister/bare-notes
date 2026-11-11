@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -372,11 +373,17 @@ fun EditorScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 4.dp),
+                    .height(52.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(start = 4.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 BareFormatButton(
                     label = "B",
                     description = "Bold",
@@ -445,6 +452,13 @@ fun EditorScreen(
                     description = "Clear formatting",
                     active = false,
                     onClick = { applyFormat { clearFormatting(body) } }
+                )
+                }
+                BareFormatDivider()
+                BareIconButton(
+                    iconRes = R.drawable.ic_keyboard_hide,
+                    contentDescription = "Hide keyboard",
+                    onClick = { keyboard?.hide() }
                 )
             }
         }
