@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+val releaseKeystore = System.getenv("BARE_KEYSTORE_FILE")?.let { file(it) }
+
 android {
     namespace = "com.potatameister.barenotes"
     compileSdk = 37
@@ -15,6 +17,17 @@ android {
         versionName = "0.1"
     }
 
+    signingConfigs {
+        if (releaseKeystore != null && releaseKeystore.exists()) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = System.getenv("BARE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("BARE_KEY_ALIAS")
+                keyPassword = System.getenv("BARE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -23,6 +36,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

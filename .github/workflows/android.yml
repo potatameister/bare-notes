@@ -34,15 +34,33 @@ jobs:
             tail -80 app/build/reports/lint-results-debug.txt
           fi
 
-      - name: Build release APK
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.BARE_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/signing"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/signing/bare-notes-release.jks"
+
+      - name: Build signed release APK
+        env:
+          BARE_KEYSTORE_FILE: ${{ runner.temp }}/signing/bare-notes-release.jks
+          BARE_KEYSTORE_PASSWORD: ${{ secrets.BARE_KEYSTORE_PASSWORD }}
+          BARE_KEY_ALIAS: ${{ secrets.BARE_KEY_ALIAS }}
+          BARE_KEY_PASSWORD: ${{ secrets.BARE_KEY_PASSWORD }}
         run: gradle assembleRelease --no-daemon --stacktrace
 
-      - name: Report APK size
-        run: ls -l app/build/outputs/apk/release/app-release-unsigned.apk
+      - name: Verify release signature
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          test -f "$APK"
+          apksigner verify --print-certs "$APK"
+
+      - name: Report release APK size
+        run: ls -l app/build/outputs/apk/release/app-release.apk
 
       - name: Upload release APK
         uses: actions/upload-artifact@v7
         with:
-          name: bare-notes-release-unsigned
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          name: bare-notes-release
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error

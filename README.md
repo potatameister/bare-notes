@@ -21,9 +21,12 @@ v0.1 — early build.
 
 ## Install
 
-Release builds are not signed yet. The latest GitHub Actions run produces an
-unsigned release APK artifact named `bare-notes-release-unsigned`. It must be
-signed before Android will install it.
+Download the signed release APK from the latest GitHub Actions run:
+
+1. Open the **Actions** tab.
+2. Open the latest **Android** run.
+3. Download the `bare-notes-release` artifact.
+4. Install `app-release.apk` on your phone.
 
 ## Build
 
