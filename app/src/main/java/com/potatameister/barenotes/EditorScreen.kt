@@ -110,6 +110,7 @@ fun EditorScreen(
         var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
         var wordCount by remember { mutableStateOf(0) }
         var dirty by rememberSaveable(id) { mutableStateOf(false) }
+        var revision by remember { mutableStateOf(0) }
         var lastBody by rememberSaveable(id) { mutableStateOf(body.text.toString()) }
         val titleFocus = remember { FocusRequester() }
         val bodyFocus = remember { FocusRequester() }
@@ -150,6 +151,7 @@ fun EditorScreen(
         fun applyFormat(action: () -> Unit) {
             action()
             dirty = true
+            revision++
             bodyFocus.requestFocus()
         }
 
@@ -183,16 +185,17 @@ fun EditorScreen(
             val value = body.text.toString()
             if (value != lastBody) {
                 dirty = true
+                revision++
                 lastBody = value
             }
             delay(250)
             wordCount = withContext(Dispatchers.Default) { countWords(value) }
         }
 
-        LaunchedEffect(dirty) {
+        LaunchedEffect(revision) {
             if (dirty) {
                 delay(1500)
-                if (dirty) save()
+                if (dirty && !save()) dirty = false
             }
         }
 
@@ -200,6 +203,7 @@ fun EditorScreen(
             if (folderId.isNotEmpty() && viewModel.folders.none { it.id == folderId }) {
                 folderId = ""
                 dirty = true
+                revision++
             }
         }
 
@@ -258,6 +262,7 @@ fun EditorScreen(
                     onValueChange = {
                         title = it
                         dirty = true
+                        revision++
                     },
                     hint = "Title",
                     style = BareType.EditorTitle,
@@ -291,7 +296,7 @@ fun EditorScreen(
                             append(
                                 when {
                                     !saved -> "Draft"
-                                    dirty -> "Editing"
+                                    dirty -> "Unsaved"
                                     else -> "Saved"
                                 }
                             )
@@ -335,6 +340,7 @@ fun EditorScreen(
                                     if (down.position.x <= box.left + 28.dp.toPx()) {
                                         toggleCheckAt(body, line.first, line.second)
                                         dirty = true
+                                        revision++
                                         save()
                                         down.consume()
                                     }
@@ -474,8 +480,11 @@ fun EditorScreen(
                         count = viewModel.unfiledCount,
                         selected = folderId.isEmpty(),
                         onClick = {
-                            folderId = ""
-                            dirty = true
+                            if (folderId.isNotEmpty()) {
+                                folderId = ""
+                                dirty = true
+                                revision++
+                            }
                             showFolderPicker = false
                         }
                     )
@@ -485,8 +494,11 @@ fun EditorScreen(
                             count = viewModel.noteCount(folder.id),
                             selected = folderId == folder.id,
                             onClick = {
-                                folderId = folder.id
-                                dirty = true
+                                if (folderId != folder.id) {
+                                    folderId = folder.id
+                                    dirty = true
+                                    revision++
+                                }
                                 showFolderPicker = false
                             }
                         )
@@ -524,6 +536,7 @@ fun EditorScreen(
                     if (folder != null) {
                         folderId = folder.id
                         dirty = true
+                        revision++
                     }
                     showNewFolder = false
                 }

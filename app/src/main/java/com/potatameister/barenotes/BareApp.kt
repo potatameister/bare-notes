@@ -114,6 +114,7 @@ fun BareApp(viewModel: NotesViewModel) {
                             onBack = { pop() },
                             onOpenFolder = { folderId ->
                                 viewModel.updateFilter(NoteFilter.InFolder(folderId))
+                                viewModel.updateSearchQuery("")
                                 routeKey = "notes"
                             }
                         )

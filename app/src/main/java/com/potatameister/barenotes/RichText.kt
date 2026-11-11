@@ -340,7 +340,7 @@ fun listContinuationTransformation(): InputTransformation = InputTransformation 
     if (prefix.isEmpty()) return@InputTransformation
 
     if (content.isBlank()) {
-        replace(lineStart, cursor, "")
+        replace(lineStart, cursor + 1, "")
         placeCursor(this, lineStart)
         return@InputTransformation
     }
