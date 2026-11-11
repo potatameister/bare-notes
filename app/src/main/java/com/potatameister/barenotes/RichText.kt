@@ -325,6 +325,12 @@ fun checkboxPrefixAt(state: TextFieldState, offset: Int): Pair<Int, Int>? {
     }
 }
 
+fun placeCursorAt(state: TextFieldState, offset: Int) {
+    state.edit {
+        placeCursor(this, offset.coerceIn(0, length))
+    }
+}
+
 fun checkboxOutputTransformation(): OutputTransformation = OutputTransformation {
     val buffer = asCharSequence()
     var lineStart = 0

@@ -149,13 +149,8 @@ fun NotesScreen(
                 visible.size == 1 -> "1 NOTE"
                 else -> "${visible.size} NOTES"
             }
-            val sortLabel = if (viewModel.sortOrder == SettingsPrefs.SORT_CREATED) {
-                "CREATED"
-            } else {
-                "EDITED"
-            }
             Text(
-                text = "$countLabel · $sortLabel",
+                text = countLabel,
                 style = BareType.Eyebrow,
                 color = colors.textMuted,
                 modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 8.dp)

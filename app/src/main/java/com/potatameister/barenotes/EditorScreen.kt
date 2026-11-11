@@ -5,6 +5,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -127,6 +128,7 @@ fun EditorScreen(
         var revision by remember { mutableStateOf(0) }
         var lastBody by rememberSaveable(id) { mutableStateOf(body.text.toString()) }
         var isEditing by rememberSaveable(id) { mutableStateOf(existing == null) }
+        var focusTitleOnEdit by rememberSaveable(id) { mutableStateOf(false) }
         val titleFocus = remember { FocusRequester() }
         val bodyFocus = remember { FocusRequester() }
         val bodyScroll = rememberScrollState()
@@ -212,10 +214,10 @@ fun EditorScreen(
 
         LaunchedEffect(isEditing) {
             if (isEditing) {
-                val target = if (noteId == null && title.isBlank()) {
-                    titleFocus
-                } else {
-                    bodyFocus
+                val target = when {
+                    noteId == null && title.isBlank() -> titleFocus
+                    focusTitleOnEdit -> titleFocus
+                    else -> bodyFocus
                 }
                 target.requestFocus()
                 keyboard?.show()
@@ -297,7 +299,10 @@ fun EditorScreen(
                         BareIconButton(
                             iconRes = R.drawable.ic_edit,
                             contentDescription = "Edit note",
-                            onClick = { isEditing = true }
+                            onClick = {
+                                focusTitleOnEdit = false
+                                isEditing = true
+                            }
                         )
                     }
                     BareIconButton(
@@ -347,7 +352,12 @@ fun EditorScreen(
                         color = colors.text,
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                focusTitleOnEdit = true
+                                isEditing = true
+                            }
                     )
                 }
                 BareDivider(
@@ -391,6 +401,7 @@ fun EditorScreen(
                             textLayout = textLayout,
                             onTextLayout = { textLayout = it },
                             onToggleCheck = { start, end -> toggleCheck(start, end) },
+                            onTapToEdit = null,
                             placeholder = "Start writing…",
                             colors = colors,
                             modifier = Modifier
@@ -406,6 +417,11 @@ fun EditorScreen(
                             textLayout = textLayout,
                             onTextLayout = { textLayout = it },
                             onToggleCheck = { start, end -> toggleCheck(start, end) },
+                            onTapToEdit = { offset ->
+                                placeCursorAt(body, offset)
+                                focusTitleOnEdit = false
+                                isEditing = true
+                            },
                             placeholder = "Empty note",
                             colors = colors,
                             modifier = Modifier.fillMaxSize()
@@ -430,6 +446,29 @@ fun EditorScreen(
                         .padding(start = 4.dp, end = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                BareIconButton(
+                    iconRes = R.drawable.ic_undo,
+                    contentDescription = "Undo",
+                    onClick = {
+                        body.undoState.undo()
+                        dirty = true
+                        revision++
+                        bodyFocus.requestFocus()
+                    },
+                    enabled = body.undoState.canUndo
+                )
+                BareIconButton(
+                    iconRes = R.drawable.ic_redo,
+                    contentDescription = "Redo",
+                    onClick = {
+                        body.undoState.redo()
+                        dirty = true
+                        revision++
+                        bodyFocus.requestFocus()
+                    },
+                    enabled = body.undoState.canRedo
+                )
+                BareFormatDivider()
                 BareFormatButton(
                     label = "B",
                     description = "Bold",
@@ -621,6 +660,7 @@ private fun NoteBodyField(
     textLayout: TextLayoutResult?,
     onTextLayout: (TextLayoutResult?) -> Unit,
     onToggleCheck: (Int, Int) -> Unit,
+    onTapToEdit: ((Int) -> Unit)?,
     placeholder: String,
     colors: BareColors,
     modifier: Modifier = Modifier
@@ -656,14 +696,26 @@ private fun NoteBodyField(
                         )
                     )
                     val line = checkboxPrefixAt(state, offset)
-                        ?: return@awaitEachGesture
-                    val box = layout.getBoundingBox(line.first)
-                    val left = box.left
-                    if (down.position.x >= left - 4.dp.toPx() &&
-                        down.position.x <= left + 30.dp.toPx()
-                    ) {
-                        onToggleCheck(line.first, line.second)
-                        down.consume()
+                    if (line != null) {
+                        val box = layout.getBoundingBox(line.first)
+                        val left = box.left
+                        if (down.position.x >= left - 4.dp.toPx() &&
+                            down.position.x <= left + 30.dp.toPx()
+                        ) {
+                            onToggleCheck(line.first, line.second)
+                            down.consume()
+                            return@awaitEachGesture
+                        }
+                    }
+                    if (!editable && onTapToEdit != null) {
+                        val up = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                            ?: return@awaitEachGesture
+                        if (up.uptimeMillis - down.uptimeMillis <
+                            viewConfiguration.longPressTimeoutMillis
+                        ) {
+                            onTapToEdit(offset)
+                            up.consume()
+                        }
                     }
                 }
             },
