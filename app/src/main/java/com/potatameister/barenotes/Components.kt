@@ -381,6 +381,7 @@ fun BareNameDialog(
                     .focusRequester(focus),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
+            BareDivider(modifier = Modifier.padding(top = 8.dp))
             if (error != null) {
                 Text(
                     text = error.orEmpty(),
@@ -418,7 +419,7 @@ fun BareDialog(
                 modifier = Modifier
                     .heightIn(max = 420.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 content = content
             )
         },

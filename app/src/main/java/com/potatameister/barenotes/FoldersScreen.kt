@@ -76,7 +76,7 @@ fun FoldersScreen(
                 ),
                 style = BareType.Meta,
                 color = colors.textMuted,
-                modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 4.dp)
+                modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 8.dp)
             )
         }
 
@@ -137,14 +137,14 @@ fun FoldersScreen(
 
         if (viewModel.folders.isNotEmpty()) {
             Text(
-                text = "Tap a folder to open it. The pencil renames it; delete moves its notes to Unfiled.",
+                text = "Tap a folder to open it. The pencil renames it; deleting clears the folder from its notes.",
                 style = BareType.Meta,
                 color = colors.textMuted,
                 modifier = Modifier.padding(
                     start = 20.dp,
-                    top = 8.dp,
+                    top = 12.dp,
                     end = 20.dp,
-                    bottom = 16.dp
+                    bottom = 20.dp
                 )
             )
         }
@@ -192,12 +192,19 @@ fun FoldersScreen(
             },
             content = {
                 Text(
+                    text = folder.name,
+                    style = BareType.Body,
+                    color = LocalBareColors.current.text,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
                     text = if (count > 0) {
                         context.resources.getQuantityString(
                             R.plurals.note_count,
                             count,
                             count
-                        ) + " in this folder will be moved to Unfiled."
+                        ) + " in this folder will no longer be in a folder."
                     } else {
                         "This folder is empty."
                     },

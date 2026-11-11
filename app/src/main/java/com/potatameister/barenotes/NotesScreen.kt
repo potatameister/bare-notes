@@ -47,10 +47,17 @@ fun NotesScreen(
     val keyboard = LocalSoftwareKeyboardController.current
     var searchOpen by rememberSaveable { mutableStateOf(false) }
     val searchFocus = remember { FocusRequester() }
-    val visible = viewModel.visibleNotes
+    val visible = remember(
+        viewModel.notes,
+        viewModel.folders,
+        viewModel.filter,
+        viewModel.searchQuery,
+        viewModel.sortOrder
+    ) {
+        viewModel.visibleNotes
+    }
     val title = when (val filter = viewModel.filter) {
         NoteFilter.All -> "All notes"
-        NoteFilter.Unfiled -> "Unfiled"
         is NoteFilter.InFolder -> viewModel.folderName(filter.id) ?: "All notes"
     }
 
@@ -142,11 +149,16 @@ fun NotesScreen(
                 visible.size == 1 -> "1 NOTE"
                 else -> "${visible.size} NOTES"
             }
+            val sortLabel = if (viewModel.sortOrder == SettingsPrefs.SORT_CREATED) {
+                "CREATED"
+            } else {
+                "EDITED"
+            }
             Text(
-                text = countLabel,
+                text = "$countLabel · $sortLabel",
                 style = BareType.Eyebrow,
                 color = colors.textMuted,
-                modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 4.dp)
+                modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 8.dp)
             )
         }
 
@@ -177,7 +189,6 @@ fun NotesScreen(
                 EmptyState(
                     title = when {
                         viewModel.searchQuery.isNotBlank() -> "No matches"
-                        viewModel.filter == NoteFilter.Unfiled -> "No unfiled notes"
                         viewModel.filter is NoteFilter.InFolder -> "No notes in this folder"
                         else -> "No notes yet"
                     },
@@ -204,7 +215,7 @@ private fun NoteRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(start = 20.dp, top = 16.dp, end = 20.dp)
+            .padding(start = 20.dp, top = 20.dp, end = 20.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -229,7 +240,7 @@ private fun NoteRow(
             color = colors.textMuted,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = 6.dp)
         )
         if (!folderLabel.isNullOrBlank()) {
             Text(
@@ -238,10 +249,10 @@ private fun NoteRow(
                 color = colors.textMuted,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 6.dp)
+                modifier = Modifier.padding(top = 8.dp)
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         BareDivider()
     }
 }

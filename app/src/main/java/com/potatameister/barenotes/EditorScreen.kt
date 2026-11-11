@@ -248,7 +248,12 @@ fun EditorScreen(
             }
         }
 
-        val folderLabel = viewModel.folderName(folderId) ?: "Unfiled"
+        val folderName = viewModel.folderName(folderId)
+        val folderLabel = if (folderName == null) {
+            "Not in any folder"
+        } else {
+            "Folder · $folderName"
+        }
         val wordLabel = context.resources.getQuantityString(
             R.plurals.word_count,
             wordCount,
@@ -314,7 +319,7 @@ fun EditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(start = 20.dp, end = 20.dp, bottom = 8.dp)
+                    .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 12.dp)
             ) {
                 if (isEditing) {
                     BareInput(
@@ -346,17 +351,17 @@ fun EditorScreen(
                     )
                 }
                 BareDivider(
-                    modifier = Modifier.padding(top = 8.dp, bottom = 6.dp)
+                    modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
                 )
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp, bottom = 4.dp),
+                        .padding(top = 4.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Folder · $folderLabel",
+                        text = folderLabel,
                         style = BareType.Meta,
                         color = colors.textMuted,
                         maxLines = 1,
@@ -375,7 +380,7 @@ fun EditorScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .padding(top = 4.dp)
+                        .padding(top = 8.dp)
                 ) {
                     if (isEditing) {
                         NoteBodyField(
@@ -518,7 +523,14 @@ fun EditorScreen(
                 },
                 content = {
                     Text(
-                        text = "This cannot be undone.",
+                        text = title.ifBlank { "Untitled" },
+                        style = BareType.Body,
+                        color = colors.text,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "This note will be permanently deleted. This cannot be undone.",
                         style = BareType.Body,
                         color = colors.textMuted
                     )
@@ -531,19 +543,6 @@ fun EditorScreen(
                 title = "Move to folder",
                 onDismissRequest = { showFolderPicker = false },
                 content = {
-                    FolderChoiceRow(
-                        label = "Unfiled",
-                        count = viewModel.unfiledCount,
-                        selected = folderId.isEmpty(),
-                        onClick = {
-                            if (folderId.isNotEmpty()) {
-                                folderId = ""
-                                dirty = true
-                                revision++
-                            }
-                            showFolderPicker = false
-                        }
-                    )
                     viewModel.folders.forEach { folder ->
                         FolderChoiceRow(
                             label = folder.name,
@@ -555,6 +554,18 @@ fun EditorScreen(
                                     dirty = true
                                     revision++
                                 }
+                                showFolderPicker = false
+                            }
+                        )
+                    }
+                    if (folderId.isNotEmpty()) {
+                        BareDivider()
+                        BareTextRow(
+                            label = "Remove from folder",
+                            onClick = {
+                                folderId = ""
+                                dirty = true
+                                revision++
                                 showFolderPicker = false
                             }
                         )

@@ -15,7 +15,6 @@ import java.util.UUID
 
 sealed interface NoteFilter {
     data object All : NoteFilter
-    data object Unfiled : NoteFilter
     data class InFolder(val id: String) : NoteFilter
 }
 
@@ -69,12 +68,8 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     val visibleNotes: List<Note>
         get() {
-            val known = folders.mapTo(HashSet()) { it.id }
             val filtered = when (val current = filter) {
                 NoteFilter.All -> notes
-                NoteFilter.Unfiled -> notes.filter {
-                    it.folderId.isEmpty() || it.folderId !in known
-                }
                 is NoteFilter.InFolder -> notes.filter { it.folderId == current.id }
             }
             val searched = if (searchQuery.isBlank()) {
@@ -98,12 +93,6 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     fun folderName(id: String): String? = folders.firstOrNull { it.id == id }?.name
 
     fun noteCount(folderId: String): Int = notes.count { it.folderId == folderId }
-
-    val unfiledCount: Int
-        get() {
-            val known = folders.mapTo(HashSet()) { it.id }
-            return notes.count { it.folderId.isEmpty() || it.folderId !in known }
-        }
 
     fun updateFilter(value: NoteFilter) {
         filter = value
