@@ -1,6 +1,7 @@
 package com.potatameister.barenotes
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -24,7 +25,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +46,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -53,9 +57,11 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -120,9 +126,11 @@ fun EditorScreen(
         var dirty by rememberSaveable(id) { mutableStateOf(false) }
         var revision by remember { mutableStateOf(0) }
         var lastBody by rememberSaveable(id) { mutableStateOf(body.text.toString()) }
+        var isEditing by rememberSaveable(id) { mutableStateOf(existing == null) }
         val titleFocus = remember { FocusRequester() }
         val bodyFocus = remember { FocusRequester() }
         val bodyScroll = rememberScrollState()
+        val focusManager = LocalFocusManager.current
 
         fun save(): Boolean {
             if (deleted) return false
@@ -164,9 +172,28 @@ fun EditorScreen(
             bodyFocus.requestFocus()
         }
 
+        fun toggleCheck(start: Int, end: Int) {
+            toggleCheckAt(body, start, end)
+            dirty = true
+            revision++
+            save()
+        }
+
+        fun finishEditing() {
+            val ok = save()
+            keyboard?.hide()
+            focusManager.clearFocus()
+            if (ok) {
+                isEditing = false
+            } else if (!saved) {
+                onClose()
+            }
+        }
+
         fun close() {
             save()
             keyboard?.hide()
+            focusManager.clearFocus()
             onClose()
         }
 
@@ -183,9 +210,14 @@ fun EditorScreen(
             onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
         }
 
-        LaunchedEffect(Unit) {
-            if (noteId == null) {
-                titleFocus.requestFocus()
+        LaunchedEffect(isEditing) {
+            if (isEditing) {
+                val target = if (noteId == null && title.isBlank()) {
+                    titleFocus
+                } else {
+                    bodyFocus
+                }
+                target.requestFocus()
                 keyboard?.show()
             }
         }
@@ -217,8 +249,16 @@ fun EditorScreen(
         }
 
         val folderLabel = viewModel.folderName(folderId) ?: "Unfiled"
-        val listInput = remember { listContinuationTransformation() }
-        val checkboxTransform = remember { checkboxOutputTransformation() }
+        val wordLabel = context.resources.getQuantityString(
+            R.plurals.word_count,
+            wordCount,
+            wordCount
+        )
+        val status = when {
+            !saved -> "Draft"
+            dirty -> "Unsaved"
+            else -> "Saved"
+        }
         val bodyStyle = BareType.Body.copy(
             color = colors.text,
             fontSize = viewModel.textSizeSp.sp,
@@ -246,6 +286,15 @@ fun EditorScreen(
                     )
                 },
                 actions = {
+                    if (isEditing) {
+                        BareTextAction("Save") { finishEditing() }
+                    } else {
+                        BareIconButton(
+                            iconRes = R.drawable.ic_edit,
+                            contentDescription = "Edit note",
+                            onClick = { isEditing = true }
+                        )
+                    }
                     BareIconButton(
                         iconRes = R.drawable.ic_folder,
                         contentDescription = "Move to folder",
@@ -267,22 +316,35 @@ fun EditorScreen(
                     .weight(1f)
                     .padding(start = 20.dp, end = 20.dp, bottom = 8.dp)
             ) {
-                BareInput(
-                    value = title,
-                    onValueChange = {
-                        title = it
-                        dirty = true
-                        revision++
-                    },
-                    hint = "Title",
-                    style = BareType.EditorTitle,
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(titleFocus),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { bodyFocus.requestFocus() })
-                )
+                if (isEditing) {
+                    BareInput(
+                        value = title,
+                        onValueChange = {
+                            title = it
+                            dirty = true
+                            revision++
+                        },
+                        hint = "Title",
+                        style = BareType.EditorTitle,
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(titleFocus),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(
+                            onNext = { bodyFocus.requestFocus() }
+                        )
+                    )
+                } else {
+                    Text(
+                        text = title.ifBlank { "Untitled" },
+                        style = BareType.EditorTitle,
+                        color = colors.text,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 BareDivider(
                     modifier = Modifier.padding(top = 8.dp, bottom = 6.dp)
                 )
@@ -302,23 +364,7 @@ fun EditorScreen(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = buildString {
-                            append(
-                                when {
-                                    !saved -> "Draft"
-                                    dirty -> "Unsaved"
-                                    else -> "Saved"
-                                }
-                            )
-                            append(" · ")
-                            append(
-                                context.resources.getQuantityString(
-                                    R.plurals.word_count,
-                                    wordCount,
-                                    wordCount
-                                )
-                            )
-                        },
+                        text = if (isEditing) "$status · $wordLabel" else wordLabel,
                         style = BareType.Meta,
                         color = colors.textMuted,
                         maxLines = 1
@@ -331,75 +377,40 @@ fun EditorScreen(
                         .weight(1f)
                         .padding(top = 4.dp)
                 ) {
-                    BasicTextField(
-                        state = body,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .focusRequester(bodyFocus)
-                            .drawWithContent {
-                                drawContent()
-                                textLayout?.let { layout ->
-                                    drawCheckboxes(
-                                        layout = layout,
-                                        text = body.text,
-                                        scrollOffset = bodyScroll.value,
-                                        colors = colors
-                                    )
-                                }
-                            }
-                            .pointerInput(textLayout) {
-                                awaitEachGesture {
-                                    val down = awaitFirstDown(
-                                        requireUnconsumed = false,
-                                        pass = PointerEventPass.Initial
-                                    )
-                                    val layout = textLayout ?: return@awaitEachGesture
-                                    val offset = layout.getOffsetForPosition(
-                                        Offset(
-                                            down.position.x,
-                                            down.position.y + bodyScroll.value
-                                        )
-                                    )
-                                    val line = checkboxPrefixAt(body, offset)
-                                        ?: return@awaitEachGesture
-                                    val box = layout.getBoundingBox(line.first)
-                                    val left = box.left
-                                    if (down.position.x >= left - 4.dp.toPx() &&
-                                        down.position.x <= left + 26.dp.toPx()
-                                    ) {
-                                        toggleCheckAt(body, line.first, line.second)
-                                        dirty = true
-                                        revision++
-                                        save()
-                                        down.consume()
-                                    }
-                                }
-                            },
-                        textStyle = bodyStyle,
-                        keyboardOptions = KeyboardOptions.Default,
-                        lineLimits = TextFieldLineLimits.MultiLine(),
-                        inputTransformation = listInput,
-                        outputTransformation = checkboxTransform,
-                        onTextLayout = { getResult -> textLayout = getResult() },
-                        scrollState = bodyScroll,
-                        cursorBrush = SolidColor(colors.text),
-                        decorator = androidx.compose.foundation.text.input.TextFieldDecorator { inner ->
-                            Box {
-                                if (body.text.isEmpty()) {
-                                    Text(
-                                        text = "Start writing…",
-                                        style = bodyStyle,
-                                        color = colors.textMuted
-                                    )
-                                }
-                                inner()
-                            }
-                        }
-                    )
+                    if (isEditing) {
+                        NoteBodyField(
+                            state = body,
+                            editable = true,
+                            textStyle = bodyStyle,
+                            scrollState = bodyScroll,
+                            textLayout = textLayout,
+                            onTextLayout = { textLayout = it },
+                            onToggleCheck = { start, end -> toggleCheck(start, end) },
+                            placeholder = "Start writing…",
+                            colors = colors,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .focusRequester(bodyFocus)
+                        )
+                    } else {
+                        NoteBodyField(
+                            state = body,
+                            editable = false,
+                            textStyle = bodyStyle,
+                            scrollState = bodyScroll,
+                            textLayout = textLayout,
+                            onTextLayout = { textLayout = it },
+                            onToggleCheck = { start, end -> toggleCheck(start, end) },
+                            placeholder = "Empty note",
+                            colors = colors,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
             }
 
-            BareDivider()
+            if (isEditing) {
+                BareDivider()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -490,6 +501,7 @@ fun EditorScreen(
                     contentDescription = "Hide keyboard",
                     onClick = { keyboard?.hide() }
                 )
+                }
             }
         }
 
@@ -589,6 +601,85 @@ fun EditorScreen(
     }
 }
 
+@Composable
+private fun NoteBodyField(
+    state: TextFieldState,
+    editable: Boolean,
+    textStyle: TextStyle,
+    scrollState: ScrollState,
+    textLayout: TextLayoutResult?,
+    onTextLayout: (TextLayoutResult?) -> Unit,
+    onToggleCheck: (Int, Int) -> Unit,
+    placeholder: String,
+    colors: BareColors,
+    modifier: Modifier = Modifier
+) {
+    val input = remember { listContinuationTransformation() }
+    val output = remember { checkboxOutputTransformation() }
+
+    BasicTextField(
+        state = state,
+        modifier = modifier
+            .drawWithContent {
+                drawContent()
+                textLayout?.let { layout ->
+                    drawCheckboxes(
+                        layout = layout,
+                        text = state.text,
+                        scrollOffset = scrollState.value,
+                        colors = colors
+                    )
+                }
+            }
+            .pointerInput(textLayout) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(
+                        requireUnconsumed = false,
+                        pass = PointerEventPass.Initial
+                    )
+                    val layout = textLayout ?: return@awaitEachGesture
+                    val offset = layout.getOffsetForPosition(
+                        Offset(
+                            down.position.x,
+                            down.position.y + scrollState.value
+                        )
+                    )
+                    val line = checkboxPrefixAt(state, offset)
+                        ?: return@awaitEachGesture
+                    val box = layout.getBoundingBox(line.first)
+                    val left = box.left
+                    if (down.position.x >= left - 4.dp.toPx() &&
+                        down.position.x <= left + 30.dp.toPx()
+                    ) {
+                        onToggleCheck(line.first, line.second)
+                        down.consume()
+                    }
+                }
+            },
+        readOnly = !editable,
+        textStyle = textStyle,
+        keyboardOptions = KeyboardOptions.Default,
+        lineLimits = TextFieldLineLimits.MultiLine(),
+        inputTransformation = input,
+        outputTransformation = output,
+        onTextLayout = { onTextLayout(it()) },
+        scrollState = scrollState,
+        cursorBrush = SolidColor(if (editable) colors.text else Color.Transparent),
+        decorator = TextFieldDecorator { inner ->
+            Box {
+                if (state.text.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = textStyle,
+                        color = colors.textMuted
+                    )
+                }
+                inner()
+            }
+        }
+    )
+}
+
 private fun DrawScope.drawCheckboxes(
     layout: TextLayoutResult,
     text: CharSequence,
@@ -604,20 +695,17 @@ private fun DrawScope.drawCheckboxes(
 
             val lineTop = layout.getLineTop(line) - scrollOffset
             val lineHeight = layout.getLineBottom(line) - layout.getLineTop(line)
-            val boxSize = minOf(18.dp.toPx(), lineHeight - 3.dp.toPx())
-                .coerceAtLeast(10.dp.toPx())
+            val boxSize = minOf(20.dp.toPx(), lineHeight - 2.dp.toPx())
+                .coerceAtLeast(12.dp.toPx())
             val top = lineTop + (lineHeight - boxSize) / 2f
             val left = layout.getBoundingBox(start).left
-            val stroke = 1.5.dp.toPx()
-            val color = if (checked) colors.text else colors.textMuted
 
-            drawRect(
-                color = color,
-                topLeft = Offset(left, top),
-                size = Size(boxSize, boxSize),
-                style = Stroke(stroke)
-            )
             if (checked) {
+                drawRect(
+                    color = colors.text,
+                    topLeft = Offset(left, top),
+                    size = Size(boxSize, boxSize)
+                )
                 val check = Path().apply {
                     moveTo(left + boxSize * 0.20f, top + boxSize * 0.55f)
                     lineTo(left + boxSize * 0.42f, top + boxSize * 0.76f)
@@ -625,12 +713,19 @@ private fun DrawScope.drawCheckboxes(
                 }
                 drawPath(
                     path = check,
-                    color = colors.text,
+                    color = colors.bg,
                     style = Stroke(
-                        width = stroke * 1.6f,
+                        width = 2.4.dp.toPx(),
                         cap = StrokeCap.Round,
                         join = StrokeJoin.Round
                     )
+                )
+            } else {
+                drawRect(
+                    color = colors.text,
+                    topLeft = Offset(left, top),
+                    size = Size(boxSize, boxSize),
+                    style = Stroke(1.8.dp.toPx())
                 )
             }
         }

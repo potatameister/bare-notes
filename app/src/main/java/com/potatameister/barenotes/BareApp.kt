@@ -2,6 +2,7 @@ package com.potatameister.barenotes
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,8 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -80,6 +83,7 @@ fun BareApp(viewModel: NotesViewModel) {
                 drawerContent = {
                     BareDrawer(
                         viewModel = viewModel,
+                        dark = dark,
                         drawerState = drawerState,
                         onOpenFolders = { push("folders") },
                         onOpenSettings = { push("settings") },
@@ -167,6 +171,7 @@ fun BareApp(viewModel: NotesViewModel) {
 @Composable
 private fun BareDrawer(
     viewModel: NotesViewModel,
+    dark: Boolean,
     drawerState: androidx.compose.material3.DrawerState,
     onOpenFolders: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -264,6 +269,40 @@ private fun BareDrawer(
                 BareDivider(
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable {
+                            viewModel.updateThemeMode(
+                                if (dark) ThemeMode.LIGHT else ThemeMode.DARK
+                            )
+                        }
+                        .padding(start = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Dark mode",
+                        style = BareType.Body,
+                        color = colors.text,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = dark,
+                        onCheckedChange = {
+                            viewModel.updateThemeMode(if (it) ThemeMode.DARK else ThemeMode.LIGHT)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = colors.text,
+                            checkedTrackColor = colors.divider,
+                            checkedBorderColor = colors.divider,
+                            uncheckedThumbColor = colors.textMuted,
+                            uncheckedTrackColor = colors.divider,
+                            uncheckedBorderColor = colors.divider
+                        )
+                    )
+                }
 
                 BareNavRow(
                     label = "Settings",

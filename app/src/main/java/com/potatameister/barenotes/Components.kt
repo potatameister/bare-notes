@@ -167,6 +167,24 @@ fun BareNavRow(
 }
 
 @Composable
+fun BareTextAction(label: String, onClick: () -> Unit) {
+    val colors = LocalBareColors.current
+    Box(
+        modifier = Modifier
+            .heightIn(min = 48.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            style = BareType.Body,
+            color = colors.text
+        )
+    }
+}
+
+@Composable
 fun BareTextRow(
     label: String,
     value: String? = null,
