@@ -150,7 +150,6 @@ fun BareNavRow(
             text = label,
             style = BareType.Body,
             color = colors.text,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
