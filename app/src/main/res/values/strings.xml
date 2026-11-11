@@ -3,10 +3,10 @@
     <string name="bare">BARE</string>
     <string name="notes">NOTES</string>
     <string name="all_notes">All notes</string>
-    <string name="unfiled">Unfiled</string>
+    <string name="unfiled">Not in any folder</string>
     <string name="folders">FOLDERS</string>
     <string name="manage_folders">Manage folders</string>
-    <string name="no_unfiled_notes">No unfiled notes</string>
+    <string name="no_unfiled_notes">No notes without a folder</string>
     <string name="no_folder_notes">No notes in this folder</string>
     <string name="folders_title">Folders</string>
     <string name="new_folder">New folder</string>
@@ -15,12 +15,12 @@
     <string name="create">Create</string>
     <string name="delete_folder">Delete folder</string>
     <string name="delete_folder_title">Delete folder?</string>
-    <string name="delete_folder_message">Notes in this folder will be moved to Unfiled.</string>
+    <string name="delete_folder_message">Notes in this folder will no longer be in a folder.</string>
     <string name="folder_name_required">Enter a folder name.</string>
     <string name="folder_name_exists">That folder already exists.</string>
     <string name="no_folders">No folders yet</string>
     <string name="no_folders_hint">Tap + to create one.</string>
-    <string name="folders_hint">Tap a folder to rename it. Deleting a folder moves its notes to Unfiled.</string>
+    <string name="folders_hint">Tap a folder to rename it. Deleting a folder clears it from its notes.</string>
     <string name="folder_label">Folder · %1$s</string>
     <string name="folder_pick_title">Folder</string>
     <string name="folder_new">New folder…</string>
